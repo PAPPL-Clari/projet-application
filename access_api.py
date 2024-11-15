@@ -143,4 +143,54 @@ if response.status_code == 200:
     # Accord diffusion	
     # Ecole
 else:
-    print(f"Erro: {response.status_code}")'''
+    print(f"Erro: {response.status_code}")
+
+    '''
+'''
+
+#type utilisateur
+nom_type_utilisateur
+
+#type mail
+nom_type
+
+#mail
+adresse_mail
+
+#pays
+id_pays
+nom_pays
+acronyme_pays
+
+#ville
+nom_ville
+
+#adresse
+adresse_1
+adresse_2
+adresse_3
+adresse_4
+npai
+code_postal
+
+#personne
+prenom
+nom
+nom_usage
+date_naissance
+ref_school
+civilite
+id_nationalite
+id_ville_naissance
+adresse_mail
+id_type_utilisateur
+
+#a_un_diplome
+id_diplome
+prenom 
+nom 
+id_personne
+date_diplomation
+date_integration
+est_diplome
+'''
