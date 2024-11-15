@@ -13,8 +13,7 @@ def getDiplomaInfo(id):
     base_url = f"https://centraliens-nantes.org"
 
     # ID 
-    #21 correspond pour Guillaume GAUTIER
-    id = f"21" 
+    #21 correspond pour Guillaume GAUTIER 
 
     #Query
     query = f"/api/v2/customer/academic/member/{id}"
