@@ -1,39 +1,10 @@
-from urllib.request import HTTPBasicAuthHandler
-import requests
-import config
-import json
+#txt: entree du type json pour extraire les infos pertinentes de la personne
+#return: liste composé des dictionnaires qui contient les informations de chaque diplome 
+#de l'individu: id, ref, nom du diplome, parcours, specialisation, nom ecole, pays ecole
+def getDiplomaInfo(result):
+    infosDiplomation = []
 
-# Imprimir dans le terminal
-def jprint(obj):
-    text = json.dumps(obj, sort_keys=True, indent=4)
-    print(text)
-
-def getDiplomaInfo(id):
-    # Base URL de la plataforme CNA
-    base_url = f"https://centraliens-nantes.org"
-
-    # ID 
-    #21 correspond pour Guillaume GAUTIER 
-
-    #Query
-    query = f"/api/v2/customer/academic/member/{id}"
-
-    # url complète avec l'autentication
-    url = f"{base_url}{query}?access_id={config.key}&access_secret={config.secret}"
-
-
-    response = requests.get(url)
-    if response.status_code == 200:
-        result = response.json() 
-        jprint(result)
-        print("Ok")
-    else:
-        print(f"Erro: {response.status_code}")
-
-
-    #Infos des diplomes, specialisation et ecole
     listeDiplomes = result["_embedded"]["diplomas"]
-
 
     for i in range(len(listeDiplomes)):
         #infos diplome
@@ -50,5 +21,16 @@ def getDiplomaInfo(id):
         #id_ecole
         nom_ecole = listeDiplomes[i]["school"]
         acronyme_pays_ecole = listeDiplomes[i]["study_year"]
-    
-    return id_diplome, ref_diplome, nom_diplome, parcours, nom_specialisation, nom_ecole, acronyme_pays_ecole
+
+        dateIntegration = listeDiplomes[i]["integration"]
+        dateDiplomation = listeDiplomes[i]["graduation"]
+        estDiplome = listeDiplomes[i]["is_graduated"]
+
+        diploma = dict(id_diplome = id_diplome, ref_diplome = ref_diplome, nom_diplome = nom_diplome,
+                       parcours = parcours, nom_specialisation = nom_specialisation, nom_ecole = nom_ecole,
+                       acronyme_pays_ecole = acronyme_pays_ecole, dateIntegration = dateIntegration,
+                       dateDiplomation = dateDiplomation, estDiplome = estDiplome)
+        
+        infosDiplomation.append(diploma)
+
+    return infosDiplomation
