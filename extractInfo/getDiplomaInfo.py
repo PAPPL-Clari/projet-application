@@ -20,10 +20,21 @@ def getDiplomaInfo(result):
         #Infos de l'ecole
         #id_ecole
         nom_ecole = listeDiplomes[i]["school"]
-        acronyme_pays_ecole = listeDiplomes[i]["study_year"]
-
-        dateIntegration = listeDiplomes[i]["integration"]
-        dateDiplomation = listeDiplomes[i]["graduation"]
+        
+        if "study_year" in  listeDiplomes[i]:
+            acronyme_pays_ecole = listeDiplomes[i]["study_year"]
+        else:
+            acronyme_pays_ecole = ''
+                    
+        if "integration" in  listeDiplomes[i]:
+            dateIntegration = listeDiplomes[i]["integration"]
+        else:
+            dateIntegration = ''
+            
+        if "graduation" in  listeDiplomes[i]:
+            dateDiplomation = listeDiplomes[i]["graduation"]
+        else:
+            dateDiplomation = ''
         estDiplome = listeDiplomes[i]["is_graduated"]
 
         diploma = dict(id_diplome = id_diplome, ref_diplome = ref_diplome, nom_diplome = nom_diplome,

@@ -17,23 +17,33 @@ cursor = connection.cursor()
 
 
 # Open a cursor to perform database operations
-cur = connection.cursor()
 
-infos = fetchData(21)
-jprint(infos)
-DiplomaInfo = getDiplomaInfo(infos)
+infos = fetchData()
 
-print("DiplomaInfo:", DiplomaInfo)
+specialisations = []
+for info in infos: 
+    if '_embedded' in info:
+        if 'diplomas' in info["_embedded"]:
+            DiplomaInfo = getDiplomaInfo(info)
 
-nom_specialisation = "\"" + DiplomaInfo[0]["nom_specialisation"] + "\""
-sql = f"INSERT INTO specialisation (id_specialisation, nom_specialisation) VALUES (0, {nom_specialisation});"
-print(sql)
+            nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
+            nom_specialisation = nom_specialisation.replace("'", "''")
+            nom_specialisation = "'" + nom_specialisation + "'"
+            
+            if nom_specialisation != "''" and nom_specialisation not in specialisations:
+                id_diplome = "\"" + DiplomaInfo[0]["id_diplome"] + "\""
+                sql = f"INSERT INTO specialisation (nom_specialisation) VALUES ({nom_specialisation});"
+                print(sql)
+                
+                cur = connection.cursor()
+                specialisations.append(nom_specialisation)
 
-cursor.execute(sql)
-connection.commit()
+                cursor.execute(sql)
+                connection.commit()
+                cur.close()
 
 # Make the changes to the database persistent
 #conn.commit()
 # Close cursor and communication with the database
-cur.close()
+
 connection.close()
