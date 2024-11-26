@@ -8,11 +8,15 @@ def jprint(obj):
     text = json.dumps(obj, sort_keys=True, indent=4)
     print(text)
 
-def fetchData():
+def fetchData(type):
 
     # Base URL de la plataforme CNA
     base_url = f"https://centraliens-nantes.org"
-    query = "/api/v2/customer/academic/member/" 
+
+    if(type == "diploma"):
+        query = "/api/v2/customer/academic/member/"
+    elif(type == "profile"):
+        query = f"/api/v2/customer/profile/people" 
 
     result = []
     
