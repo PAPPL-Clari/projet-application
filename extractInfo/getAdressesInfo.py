@@ -1,5 +1,6 @@
 def getAdressesInfo(result):
     addresses = []
+
     for item in result:
         if len(item) > 0:
             addresses.append(item)
@@ -9,13 +10,11 @@ def getAdressesInfo(result):
     # État	
     # Pays
     # N'habite pas à l'addresse indiquée (NPAI)	
-    zips = []	
-    villes = []
-    etats = []
-    pays = []
+    infoAddresse = dict()
     for address in addresses:
-        
-        nomRue = address["adress"]
+        nomRue = address["address"]
+        nomRue2 = address["address_2"]
+        nomRue3 = address["address_3"]
         ville = address["city"]
         nomPays = address["country_name"]
         codePostal = address["zip"]
@@ -25,10 +24,9 @@ def getAdressesInfo(result):
         telephone = address["mobile"]
         prefix_telephone = address["mobile_prefix"]
 
-        coordonnees = { nomRue = nomRue, ville = ville, codePostal = codePostal, nomPays = nomPays, npai = npai,
-                        telephone = telephone, prefix_telephone = prefix_telephone
-                        }
+        coordonnees = { "nomRue": nomRue, "ville": ville, "codePostal": codePostal, "nomPays": nomPays, "npai": npai,
+                        "telephone": "telephone", "prefix_telephone": prefix_telephone}
         
-        infoAddresse.update = (type_adresse = type_adresse, addresse = coordonnees)
+        infoAddresse.update = {"type_adresse": type_adresse, "addresse": coordonnees}
 
     return infoAddresse

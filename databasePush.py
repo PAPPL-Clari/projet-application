@@ -5,6 +5,8 @@ import json
 from extractInfo.fetchData import fetchData
 from extractInfo.getDiplomaInfo import getDiplomaInfo
 from extractInfo.getUtilisateurInfo import getUtilisateurInfo
+from extractInfo.getMailsInfo import getMailsInfo
+from extractInfo.getAdressesInfo import getAdressesInfo
 
 def jprint(obj):
     text = json.dumps(obj, sort_keys=True, indent=4)
@@ -19,6 +21,7 @@ cursor = connection.cursor() # Open a cursor to perform database operations
 
 #Add data to the table "type utilisateur"
 infosDiploma = fetchData("diploma")
+infosUser = fetchData("profile")
 
 specialisations = []
 
@@ -46,7 +49,6 @@ for info in infosDiploma:
 
 #Add data to the table "type utilisateur"
 
-infosUser = fetchData("profile")
 type_utilisateurs = []
 
 for info in infosUser: 
@@ -68,6 +70,29 @@ for info in infosUser:
                 cursor.execute(sql)
                 connection.commit()
                 cur.close()
+
+#Add data type_mail to table type (we need also to add type of address yet)
+types = []
+
+for info in infosUser: 
+    if '_embedded' in info:
+        if 'emails' in info["_embedded"]:
+        
+            nom_type = getMailsInfo(info["_embedded"]["emails"]).keys()
+
+            for nom in nom_type:
+                nom = nom.replace("'", "''")
+                nom = "'" + nom + "'"
+
+                if nom != "''" and nom not in types:
+                    sql = f"INSERT INTO type (nom_type) VALUES ({nom});"
+                    print(sql)
+                    types.append(nom)
+
+                    cur = connection.cursor()
+                    cursor.execute(sql)
+                    connection.commit()
+                    cur.close()
 
 # Close cursor and communication with the database
 connection.close()

@@ -3,10 +3,9 @@
 def getMailsInfo(result):
     infoMail = dict()
 
-    for email in result:
-        type = email["type"]
-        address = email["address"]
-
+    for mail in result:
+        type = mail["type"]
+        address = mail["address"]
         infoMail[type] = address
     
     return infoMail
