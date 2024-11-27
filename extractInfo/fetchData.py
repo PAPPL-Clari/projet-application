@@ -20,7 +20,7 @@ def fetchData(type):
 
     result = []
     
-    for pag in range (1, 2):
+    for pag in range (1, 246):
         
         url = f"{base_url}{query}?access_id={config.key}&access_secret={config.secret}&page={pag}&limit=100"
 

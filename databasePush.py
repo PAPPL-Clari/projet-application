@@ -112,6 +112,53 @@ for info in infosUser:
                     print(sql)
                     types.append(nom)
 
+                    '''cur = connection.cursor()
+                    cursor.execute(sql)
+                    connection.commit()
+                    cur.close()'''
+
+#Add data mail to table mail
+mails = []
+
+#Recupera all types id
+idTypes = dict()
+
+for type in types:
+    cur = connection.cursor()
+    
+    sqlRecup = f"SELECT id_type from type WHERE nom_type={type}"
+
+    cur.execute(sqlRecup)
+    index = cur.fetchall()
+
+    for id in index:
+        id = id[0]
+        idTypes.update({type: id})
+
+    cur.close()
+
+print(idTypes)
+
+
+for info in infosUser: 
+    if '_embedded' in info:
+        if 'emails' in info["_embedded"]:
+
+            infosMail = getMailsInfo(info["_embedded"]["emails"])
+            print(infosMail)
+
+            for keyName in infosMail.keys():
+                newMail = infosMail[keyName].replace("'", "''")
+                newMail = "'" + newMail + "'"
+                infosMail.update({keyName: newMail})
+
+                keyName = "'" + keyName + "'"
+
+                if newMail != "''" and newMail not in mails:
+                    sql = f"INSERT INTO mail (adresse_mail, id_type) VALUES ({newMail}, {idTypes[keyName]});"
+                    print(sql)
+                    mails.append(newMail)
+
                     cur = connection.cursor()
                     cursor.execute(sql)
                     connection.commit()
