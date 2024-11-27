@@ -25,7 +25,7 @@ infosUser = fetchData("profile")
 
 specialisations = []
 
-for info in infosDiploma: 
+'''for info in infosDiploma: 
     if '_embedded' in info:
         if 'diplomas' in info["_embedded"]:
             DiplomaInfo = getDiplomaInfo(info)
@@ -45,11 +45,11 @@ for info in infosDiploma:
 
                 cursor.execute(sql)
                 connection.commit()
-                cur.close()
+                cur.close()'''
 
 #Add data to the table "type utilisateur"
 
-type_utilisateurs = []
+'''type_utilisateurs = []
 
 for info in infosUser: 
     if '_embedded' in info:
@@ -69,7 +69,7 @@ for info in infosUser:
 
                 cursor.execute(sql)
                 connection.commit()
-                cur.close()
+                cur.close()'''
 
 #Add data type_mail to table type (we need also to add type of address yet)
 types = []
@@ -77,8 +77,31 @@ types = []
 for info in infosUser: 
     if '_embedded' in info:
         if 'emails' in info["_embedded"]:
-        
+
             nom_type = getMailsInfo(info["_embedded"]["emails"]).keys()
+
+            for nom in nom_type:
+                nom = nom.replace("'", "''")
+                nom = "'" + nom + "'"
+
+                if nom != "''" and nom not in types:
+                    sql = f"INSERT INTO type (nom_type) VALUES ({nom});"
+                    print(sql)
+                    types.append(nom)
+
+                    '''cur = connection.cursor()
+                    cursor.execute(sql)
+                    connection.commit()
+                    cur.close()'''
+
+#Add data type_adress to table type
+
+for info in infosUser: 
+    if '_embedded' in info:
+        if 'address' in info["_embedded"]:
+            #jprint(info)
+
+            nom_type = getAdressesInfo(info["_embedded"]["address"]).keys()
 
             for nom in nom_type:
                 nom = nom.replace("'", "''")
