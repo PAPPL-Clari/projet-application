@@ -1,5 +1,5 @@
 import psycopg2
-import config
+import config as config
 import getDiplomaInfo
 from unidecode import unidecode
 

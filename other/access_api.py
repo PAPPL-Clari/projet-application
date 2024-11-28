@@ -1,6 +1,6 @@
 from urllib.request import HTTPBasicAuthHandler
 import requests
-import config
+import extractInfo.config as config
 import json
 
 # Imprimir dans le terminal

@@ -1,6 +1,6 @@
 from urllib.request import HTTPBasicAuthHandler
 import requests
-import config
+import config as config
 import json
 import addDatabase
 import getPersonneInfo
