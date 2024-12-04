@@ -36,7 +36,12 @@ def push_specialisation(infosDiploma, connection, cursor):
                 
                 if nom_specialisation != "''" and nom_specialisation not in specialisations:
                     id_diplome = "\"" + DiplomaInfo[0]["id_diplome"] + "\""
-                    sql = f"INSERT INTO specialisation (id_specialisation, nom_specialisation) VALUES ({i},{nom_specialisation});"
+                    sql = f"""
+                    INSERT INTO specialisation (nom_specialisation)
+                    VALUES ({nom_specialisation})
+                    ON CONFLICT (nom_specialisation)
+                    DO NOTHING;
+                    """
                     print(sql)
                     
                     cur = connection.cursor()
@@ -60,7 +65,12 @@ def push_type_utilisateur(infosUser, connection, cursor):
                 nom_type_utilisateur = "'" + nom_type_utilisateur + "'"
 
                 if nom_type_utilisateur != "''" and nom_type_utilisateur not in type_utilisateurs:
-                    sql = f"INSERT INTO type_utilisateur (id_type_utilisateur, nom_type_utilisateur) VALUES ({i},{nom_type_utilisateur});"
+                    sql = f"""
+                    INSERT INTO type_utilisateur (nom_type_utilisateur)
+                    VALUES ({nom_type_utilisateur})
+                    ON CONFLICT (nom_type_utilisateur)
+                    DO NOTHING;
+                    """
                     print(sql)
                     
                     cur = connection.cursor()
@@ -84,7 +94,12 @@ def push_type_mail(infosUser, connection, cursor, types):
                     nom = "'" + nom + "'"
 
                     if nom != "''" and nom not in types:
-                        sql = f"INSERT INTO type (nom_type) VALUES ({nom});"
+                        sql = f"""
+                        INSERT INTO type (nom_type)
+                        VALUES ({nom})
+                        ON CONFLICT (nom_type)
+                        DO NOTHING;
+                        """
                         print(sql)
                         types.append(nom)
 
@@ -109,7 +124,12 @@ def push_type_adress(infosUser, connection, cursor, types):
                     nom = "'" + nom + "'"
 
                     if nom != "''" and nom not in types:
-                        sql = f"INSERT INTO type (nom_type) VALUES ({nom});"
+                        sql = f"""
+                        INSERT INTO type (nom_type)
+                        VALUES ({nom})
+                        ON CONFLICT (nom_type)
+                        DO NOTHING;
+                        """
                         print(sql)
                         types.append(nom)
 
@@ -159,7 +179,12 @@ def push_mail(infosUser, connection, cursor, types):
                     keyName = "'" + keyName + "'"
 
                     if newMail != "''" and newMail not in mails:
-                        sql = f"INSERT INTO mail (adresse_mail, id_type) VALUES ({newMail}, {idTypes[keyName]});"
+                        sql = f"""
+                        INSERT INTO mail (adresse_mail, id_type)
+                        VALUES ({newMail}, {idTypes[keyName]})
+                        ON CONFLICT (adresse_mail)
+                        DO UPDATE SET id_type = EXCLUDED.id_type;
+                        """
                         print(sql)
                         mails.append(newMail)
 
@@ -172,14 +197,14 @@ def push_mail(infosUser, connection, cursor, types):
 
 def main():
     infosDiploma = fetchData("diploma")
-    infosUser = fetchData("profile")
+    #infosUser = fetchData("profile")
     connection, cursor = init()
     types = []
-    
+    push_specialisation(infosDiploma, connection, cursor)
     #push_type_utilisateur(infosUser, connection, cursor)
-    types = push_type_mail(infosUser, connection, cursor, types)
-    types = push_type_adress(infosUser, connection, cursor, types)
-    push_mail(infosUser, connection, cursor, types)
+    #types = push_type_mail(infosUser, connection, cursor, types)
+    #types = push_type_adress(infosUser, connection, cursor, types)
+    #push_mail(infosUser, connection, cursor, types)
     cursor.close()
     
 if __name__ == "__main__":

@@ -205,6 +205,12 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
+ALTER TABLE specialisation ADD CONSTRAINT unique_nom_specialisation UNIQUE (nom_specialisation);
+
+ALTER TABLE public.type ADD CONSTRAINT unique_nom_type UNIQUE (nom_type);
+
+ALTER TABLE type_utilisateur ADD CONSTRAINT unique_nom_type_utilisateur UNIQUE (nom_type_utilisateur);
+
 ALTER TABLE public.personne ADD CONSTRAINT ville_personne_fk
 FOREIGN KEY (id_ville_naissance)
 REFERENCES public.ville (id_ville)
