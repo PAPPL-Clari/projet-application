@@ -49,7 +49,6 @@ def push_specialisation(infosDiploma, connection, cursor):
 
                     cursor.execute(sql)
                     connection.commit()
-                    cur.close()
 
 # Adds data to the table "type_utilisateur"
 def push_type_utilisateur(infosUser, connection, cursor):
@@ -73,12 +72,10 @@ def push_type_utilisateur(infosUser, connection, cursor):
                     """
                     print(sql)
                     
-                    cur = connection.cursor()
                     type_utilisateurs.append(nom_type_utilisateur)
 
                     cursor.execute(sql)
                     connection.commit()
-                    cur.close()
 
 #Adds data type_mail to table "type"
 def push_type_mail(infosUser, connection, cursor, types):
@@ -103,15 +100,12 @@ def push_type_mail(infosUser, connection, cursor, types):
                         print(sql)
                         types.append(nom)
 
-                        cur = connection.cursor()
                         cursor.execute(sql)
                         connection.commit()
-                        cur.close()
     return types
 
 #Add data type_adress to table "type"
 def push_type_adress(infosUser, connection, cursor, types):
-    types = []
     for info in infosUser: 
         if '_embedded' in info:
             if 'address' in info["_embedded"]:
@@ -133,10 +127,8 @@ def push_type_adress(infosUser, connection, cursor, types):
                         print(sql)
                         types.append(nom)
 
-                        cur = connection.cursor()
                         cursor.execute(sql)
                         connection.commit()
-                        cur.close()
     return types
 
 
@@ -148,18 +140,17 @@ def push_mail(infosUser, connection, cursor, types):
     idTypes = dict()
 
     for type in types:
-        cur = connection.cursor()
         
         sqlRecup = f"SELECT id_type from type WHERE nom_type={type}"
 
-        cur.execute(sqlRecup)
-        index = cur.fetchall()
+        cursor.execute(sqlRecup)
+        index = cursor.fetchall()
 
         for id in index:
             id = id[0]
             idTypes.update({type: id})
 
-        cur.close()
+        
 
     print(idTypes)
 
@@ -188,23 +179,22 @@ def push_mail(infosUser, connection, cursor, types):
                         print(sql)
                         mails.append(newMail)
 
-                        cur = connection.cursor()
                         cursor.execute(sql)
                         connection.commit()
-                        cur.close()
+                        
 
 
 
 def main():
-    infosDiploma = fetchData("diploma")
-    #infosUser = fetchData("profile")
+    #infosDiploma = fetchData("diploma")
+    infosUser = fetchData("profile")
     connection, cursor = init()
     types = []
-    push_specialisation(infosDiploma, connection, cursor)
+    #push_specialisation(infosDiploma, connection, cursor)
     #push_type_utilisateur(infosUser, connection, cursor)
-    #types = push_type_mail(infosUser, connection, cursor, types)
-    #types = push_type_adress(infosUser, connection, cursor, types)
-    #push_mail(infosUser, connection, cursor, types)
+    types = push_type_mail(infosUser, connection, cursor, types)
+    types = push_type_adress(infosUser, connection, cursor, types)
+    push_mail(infosUser, connection, cursor, types)
     cursor.close()
     
 if __name__ == "__main__":
