@@ -1,12 +1,14 @@
+import asyncio
 import psycopg2
 import config as config
 from unidecode import unidecode
 import json
-from extractInfo.fetchData import fetchData
+from extractInfo.fetchData import fetchData_async
 from extractInfo.getDiplomaInfo import getDiplomaInfo
 from extractInfo.getUtilisateurInfo import getUtilisateurInfo
 from extractInfo.getMailsInfo import getMailsInfo
 from extractInfo.getAdressesInfo import getAdressesInfo
+from datetime import datetime
 
 def jprint(obj):
     text = json.dumps(obj, sort_keys=True, indent=4)
@@ -186,15 +188,22 @@ def push_mail(infosUser, connection, cursor, types):
 
 
 def main():
-    #infosDiploma = fetchData("diploma")
-    infosUser = fetchData("profile")
+    start_time = datetime.now()
+
+    infosDiploma = asyncio.run(fetchData_async("diploma"))
+    infosUser = asyncio.run(fetchData_async("profile"))
+
+    end_time = datetime.now()
+    print('Duration: {}'.format(end_time - start_time))
+
     connection, cursor = init()
     types = []
+
     #push_specialisation(infosDiploma, connection, cursor)
     #push_type_utilisateur(infosUser, connection, cursor)
-    types = push_type_mail(infosUser, connection, cursor, types)
-    types = push_type_adress(infosUser, connection, cursor, types)
-    push_mail(infosUser, connection, cursor, types)
+    #types = push_type_mail(infosUser, connection, cursor, types)
+    #types = push_type_adress(infosUser, connection, cursor, types)
+    #push_mail(infosUser, connection, cursor, types)
     cursor.close()
     
 if __name__ == "__main__":
