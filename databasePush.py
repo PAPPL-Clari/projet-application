@@ -16,6 +16,16 @@ def jprint(obj):
     print(text)
 
 def init():
+<<<<<<< HEAD
+=======
+    """
+    Realise la connection à la base de données locale
+    args:
+    return:
+        connection: connexion à la base de données
+        cursor: cursor pour faire les requêtes
+    """
+>>>>>>> fb9c58d (Commit to pull)
     connection = psycopg2.connect(database=config.database,
                                 user= config.login,
                                 password=config.password,
@@ -26,6 +36,7 @@ def init():
 # Adds data to the table "specialisation"
 def push_specialisation(infosDiploma, connection, cursor):
     specialisations = []
+<<<<<<< HEAD
 
     for info in infosDiploma: 
         if '_embedded' in info and 'diplomas' in info["_embedded"]:
@@ -53,6 +64,31 @@ def push_specialisation(infosDiploma, connection, cursor):
                     connection.commit()
 
                 specialisations.append(nom_specialisation)
+=======
+    i = 0
+    for info in infosDiploma: 
+        if '_embedded' in info:
+            if 'diplomas' in info["_embedded"]:
+                DiplomaInfo = getDiplomaInfo(info)
+
+                #Put specialisation info in database
+                nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
+                nom_specialisation = nom_specialisation.replace("'", "''")
+                nom_specialisation = "'" + nom_specialisation + "'"
+                
+                if nom_specialisation != "''" and nom_specialisation not in specialisations:
+                    id_diplome = "\"" + DiplomaInfo[0]["id_diplome"] + "\""
+                    sql = f"INSERT INTO specialisation (id_specialisation, nom_specialisation) VALUES ({i},{nom_specialisation});"
+                    print(sql)
+                    
+                    cur = connection.cursor()
+                    specialisations.append(nom_specialisation)
+
+                    cursor.execute(sql)
+                    connection.commit()
+                    cur.close()
+                i=i+1
+>>>>>>> fb9c58d (Commit to pull)
 
 # Adds data to the table "type_utilisateur"
 def push_type_utilisateur(infosUser, connection, cursor):
@@ -68,6 +104,7 @@ def push_type_utilisateur(infosUser, connection, cursor):
                 nom_type_utilisateur = "'" + nom_type_utilisateur + "'"
 
                 if nom_type_utilisateur != "''" and nom_type_utilisateur not in type_utilisateurs:
+<<<<<<< HEAD
                     # Check if the specialization already exists
                     check_sql = f"""
                     SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = {nom_type_utilisateur};
@@ -85,6 +122,17 @@ def push_type_utilisateur(infosUser, connection, cursor):
                         
                         cursor.execute(sql)
                         connection.commit()
+=======
+                    sql = f"INSERT INTO type_utilisateur (id_type_utilisateur, nom_type_utilisateur) VALUES ({i},{nom_type_utilisateur});"
+                    print(sql)
+                    
+                    cur = connection.cursor()
+                    type_utilisateurs.append(nom_type_utilisateur)
+
+                    cursor.execute(sql)
+                    connection.commit()
+                    cur.close()
+>>>>>>> fb9c58d (Commit to pull)
 
 #Adds data type_mail to table "type"
 def push_type_mail(infosUser, connection, cursor, types):
@@ -100,6 +148,7 @@ def push_type_mail(infosUser, connection, cursor, types):
                     nom = "'" + nom + "'"
 
                     if nom != "''" and nom not in types:
+<<<<<<< HEAD
                         types.append(nom)
                         # Check if the specialization already exists
                         check_sql = f"""
@@ -115,10 +164,33 @@ def push_type_mail(infosUser, connection, cursor, types):
                             """
                             cursor.execute(sql)
                             connection.commit()
+=======
+                        sql = f"INSERT INTO type (nom_type) VALUES ({nom});"
+                        print(sql)
+                        types.append(nom)
+
+                        cur = connection.cursor()
+                        cursor.execute(sql)
+                        connection.commit()
+                        cur.close()
+>>>>>>> fb9c58d (Commit to pull)
     return types
 
 #Add data type_adress to table "type"
 def push_type_adress(infosUser, connection, cursor, types):
+<<<<<<< HEAD
+=======
+    """
+    Fait l'insertion du type d'adresse dans le tableau "type"
+    args:
+        infosUser: vecteur avec tous les pages de la requête à l'api
+        connection: connection à la base de données locale
+        cursor: cursor 
+        types: 
+    return:
+    """
+    types = []
+>>>>>>> fb9c58d (Commit to pull)
     for info in infosUser: 
         if '_embedded' in info:
             if 'address' in info["_embedded"]:
@@ -131,6 +203,7 @@ def push_type_adress(infosUser, connection, cursor, types):
                     nom = "'" + nom + "'"
 
                     if nom != "''" and nom not in types:
+<<<<<<< HEAD
                         types.append(nom)
                         # Check if the specialization already exists
                         check_sql = f"""
@@ -223,3 +296,80 @@ types = push_type_mail(infosUser, connection, cursor, types)
 types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
 cursor.close()
+=======
+                        sql = f"INSERT INTO type (nom_type) VALUES ({nom});"
+                        print(sql)
+                        types.append(nom)
+
+                        cur = connection.cursor()
+                        cursor.execute(sql)
+                        connection.commit()
+                        cur.close()
+    return types
+
+
+#Add data mail to table mail
+def push_mail(infosUser, connection, cursor, types):
+    mails = []
+
+    #Recupera all types id
+    idTypes = dict()
+
+    for type in types:
+        cur = connection.cursor()
+        
+        sqlRecup = f"SELECT id_type from type WHERE nom_type={type}"
+
+        cur.execute(sqlRecup)
+        index = cur.fetchall()
+
+        for id in index:
+            id = id[0]
+            idTypes.update({type: id})
+
+        cur.close()
+
+    print(idTypes)
+
+
+    for info in infosUser: 
+        if '_embedded' in info:
+            if 'emails' in info["_embedded"]:
+
+                infosMail = getMailsInfo(info["_embedded"]["emails"])
+                print(infosMail)
+
+                for keyName in infosMail.keys():
+                    newMail = infosMail[keyName].replace("'", "''")
+                    newMail = "'" + newMail + "'"
+                    infosMail.update({keyName: newMail})
+
+                    keyName = "'" + keyName + "'"
+
+                    if newMail != "''" and newMail not in mails:
+                        sql = f"INSERT INTO mail (adresse_mail, id_type) VALUES ({newMail}, {idTypes[keyName]});"
+                        print(sql)
+                        mails.append(newMail)
+
+                        cur = connection.cursor()
+                        cursor.execute(sql)
+                        connection.commit()
+                        cur.close()
+
+def main():
+    infosDiploma = fetchData("diploma")
+    print(infosDiploma.length)
+    infosUser = fetchData("profile")
+    print(infosUser.length)
+    connection, cursor = init()
+    types = []
+    
+    #push_type_utilisateur(infosUser, connection, cursor)
+    types = push_type_mail(infosUser, connection, cursor, types)
+    types = push_type_adress(infosUser, connection, cursor, types)
+    push_mail(infosUser, connection, cursor, types)
+    cursor.close()
+    
+if __name__ == "__main__":
+    main()
+>>>>>>> fb9c58d (Commit to pull)
