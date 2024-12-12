@@ -36,7 +36,7 @@ async def fetchData_async(type):
 
     urls = [
         f"{base_url}{query}?access_id={config.key}&access_secret={config.secret}&page={pag}&limit=100"
-        for pag in range(1, 248)
+        for pag in range(1, 248) # 248 pages de 100 utilisateurs
     ]
 
     result = []

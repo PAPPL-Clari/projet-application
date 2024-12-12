@@ -1,3 +1,4 @@
+#%%
 import asyncio
 import psycopg2
 import config as config
@@ -27,30 +28,31 @@ def push_specialisation(infosDiploma, connection, cursor):
     specialisations = []
 
     for info in infosDiploma: 
-        if '_embedded' in info:
-            if 'diplomas' in info["_embedded"]:
-                DiplomaInfo = getDiplomaInfo(info)
+        if '_embedded' in info and 'diplomas' in info["_embedded"]:
+            DiplomaInfo = getDiplomaInfo(info)
 
-                #Put specialisation info in database
-                nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
-                nom_specialisation = nom_specialisation.replace("'", "''")
-                nom_specialisation = "'" + nom_specialisation + "'"
-                
-                if nom_specialisation != "''" and nom_specialisation not in specialisations:
-                    id_diplome = "\"" + DiplomaInfo[0]["id_diplome"] + "\""
-                    sql = f"""
+            # Prepare specialization name
+            nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
+            nom_specialisation = nom_specialisation.replace("'", "''")  # Escape single quotes
+            nom_specialisation = "'" + nom_specialisation + "'"
+
+            if nom_specialisation != "''" and nom_specialisation not in specialisations:
+                # Check if the specialization already exists
+                check_sql = f"""
+                SELECT id_specialisation FROM specialisation WHERE nom_specialisation = {nom_specialisation};
+                """
+                cursor.execute(check_sql)
+                result = cursor.fetchone()
+
+                if not result:  # Insert only if it does not exist
+                    insert_sql = f"""
                     INSERT INTO specialisation (nom_specialisation)
-                    VALUES ({nom_specialisation})
-                    ON CONFLICT (nom_specialisation)
-                    DO NOTHING;
+                    VALUES ({nom_specialisation});
                     """
-                    print(sql)
-                    
-                    cur = connection.cursor()
-                    specialisations.append(nom_specialisation)
-
-                    cursor.execute(sql)
+                    cursor.execute(insert_sql)
                     connection.commit()
+
+                specialisations.append(nom_specialisation)
 
 # Adds data to the table "type_utilisateur"
 def push_type_utilisateur(infosUser, connection, cursor):
@@ -66,18 +68,23 @@ def push_type_utilisateur(infosUser, connection, cursor):
                 nom_type_utilisateur = "'" + nom_type_utilisateur + "'"
 
                 if nom_type_utilisateur != "''" and nom_type_utilisateur not in type_utilisateurs:
-                    sql = f"""
-                    INSERT INTO type_utilisateur (nom_type_utilisateur)
-                    VALUES ({nom_type_utilisateur})
-                    ON CONFLICT (nom_type_utilisateur)
-                    DO NOTHING;
+                    # Check if the specialization already exists
+                    check_sql = f"""
+                    SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = {nom_type_utilisateur};
                     """
-                    print(sql)
-                    
-                    type_utilisateurs.append(nom_type_utilisateur)
+                    cursor.execute(check_sql)
+                    result = cursor.fetchone()
 
-                    cursor.execute(sql)
-                    connection.commit()
+                    if not result:  # Insert only if it does not exist
+                        
+                        sql = f"""
+                        INSERT INTO type_utilisateur (nom_type_utilisateur)
+                        VALUES ({nom_type_utilisateur});
+                        """
+                        type_utilisateurs.append(nom_type_utilisateur)
+                        
+                        cursor.execute(sql)
+                        connection.commit()
 
 #Adds data type_mail to table "type"
 def push_type_mail(infosUser, connection, cursor, types):
@@ -93,17 +100,21 @@ def push_type_mail(infosUser, connection, cursor, types):
                     nom = "'" + nom + "'"
 
                     if nom != "''" and nom not in types:
-                        sql = f"""
-                        INSERT INTO type (nom_type)
-                        VALUES ({nom})
-                        ON CONFLICT (nom_type)
-                        DO NOTHING;
-                        """
-                        print(sql)
                         types.append(nom)
+                        # Check if the specialization already exists
+                        check_sql = f"""
+                        SELECT id_type FROM type WHERE nom_type = {nom};
+                        """
+                        cursor.execute(check_sql)
+                        result = cursor.fetchone()
 
-                        cursor.execute(sql)
-                        connection.commit()
+                        if not result:  # Insert only if it does not exist
+                            sql = f"""
+                            INSERT INTO type (nom_type)
+                            VALUES ({nom});
+                            """
+                            cursor.execute(sql)
+                            connection.commit()
     return types
 
 #Add data type_adress to table "type"
@@ -120,91 +131,95 @@ def push_type_adress(infosUser, connection, cursor, types):
                     nom = "'" + nom + "'"
 
                     if nom != "''" and nom not in types:
-                        sql = f"""
-                        INSERT INTO type (nom_type)
-                        VALUES ({nom})
-                        ON CONFLICT (nom_type)
-                        DO NOTHING;
-                        """
-                        print(sql)
                         types.append(nom)
+                        # Check if the specialization already exists
+                        check_sql = f"""
+                        SELECT id_type FROM type WHERE nom_type = {nom};
+                        """
+                        cursor.execute(check_sql)
+                        result = cursor.fetchone()
 
-                        cursor.execute(sql)
-                        connection.commit()
+                        if not result:  # Insert only if it does not exist
+                            sql = f"""
+                            INSERT INTO type (nom_type)
+                            VALUES ({nom});
+                            """
+                            cursor.execute(sql)
+                            connection.commit()
     return types
 
-
-#Add data mail to table mail
+# Add data mail to table mail
 def push_mail(infosUser, connection, cursor, types):
     mails = []
 
-    #Recupera all types id
-    idTypes = dict()
-
+    # Recupera todos os tipos de ID
+    idTypes = {}
     for type in types:
-        
-        sqlRecup = f"SELECT id_type from type WHERE nom_type={type}"
-
+        sqlRecup = f"SELECT id_type FROM type WHERE nom_type={type}"
         cursor.execute(sqlRecup)
-        index = cursor.fetchall()
-
-        for id in index:
-            id = id[0]
-            idTypes.update({type: id})
-
-        
-
-    print(idTypes)
-
+        result = cursor.fetchone()
+        if result:
+            idTypes[type] = result[0]
 
     for info in infosUser: 
-        if '_embedded' in info:
-            if 'emails' in info["_embedded"]:
+        if '_embedded' in info and 'emails' in info["_embedded"]:
+            infosMail = getMailsInfo(info["_embedded"]["emails"])
 
-                infosMail = getMailsInfo(info["_embedded"]["emails"])
-                print(infosMail)
+            for keyName in infosMail.keys():
+                newMail = infosMail[keyName].replace("'", "''")  # Escape single quotes
+                newMail = f"'{newMail}'"  # Wrap in quotes
+                infosMail[keyName] = newMail
+                keyName = f"'{keyName}'"
 
-                for keyName in infosMail.keys():
-                    newMail = infosMail[keyName].replace("'", "''")
-                    newMail = "'" + newMail + "'"
-                    infosMail.update({keyName: newMail})
+                if newMail != "''" and newMail not in mails:
+                    # Verifica se o email já existe
+                    check_sql = f"SELECT adresse_mail FROM mail WHERE adresse_mail = {newMail};"
+                    cursor.execute(check_sql)
+                    exists = cursor.fetchone()
 
-                    keyName = "'" + keyName + "'"
-
-                    if newMail != "''" and newMail not in mails:
-                        sql = f"""
-                        INSERT INTO mail (adresse_mail, id_type)
-                        VALUES ({newMail}, {idTypes[keyName]})
-                        ON CONFLICT (adresse_mail)
-                        DO UPDATE SET id_type = EXCLUDED.id_type;
+                    if exists:
+                        # Atualiza id_type se o email já existir
+                        update_sql = f"""
+                        UPDATE mail
+                        SET id_type = {idTypes[keyName]}
+                        WHERE adresse_mail = {newMail};
                         """
-                        print(sql)
-                        mails.append(newMail)
+                        cursor.execute(update_sql)
+                    else:
+                        # Insere novo email
+                        insert_sql = f"""
+                        INSERT INTO mail (adresse_mail, id_type)
+                        VALUES ({newMail}, {idTypes[keyName]});
+                        """
+                        cursor.execute(insert_sql)
 
-                        cursor.execute(sql)
-                        connection.commit()
-                        
+                    mails.append(newMail)
+
+    connection.commit()
+
+# Add data mail to table ville
+#def push_ville(infosUser, connection, cursor)
 
 
+#%%
+import nest_asyncio
+nest_asyncio.apply()
+#start_time = datetime.now()
 
-def main():
-    start_time = datetime.now()
+infosDiploma = asyncio.run(fetchData_async("diploma"))
+infosUser = asyncio.run(fetchData_async("profile"))
 
-    infosDiploma = asyncio.run(fetchData_async("diploma"))
-    infosUser = asyncio.run(fetchData_async("profile"))
+#end_time = datetime.now()
 
-    end_time = datetime.now()
-    print('Duration: {}'.format(end_time - start_time))
+#%%
+#print('Duration: {}'.format(end_time - start_time))
 
-    connection, cursor = init()
-    types = []
+connection, cursor = init()
+types = []
 
-    #push_specialisation(infosDiploma, connection, cursor)
-    #push_type_utilisateur(infosUser, connection, cursor)
-    #types = push_type_mail(infosUser, connection, cursor, types)
-    #types = push_type_adress(infosUser, connection, cursor, types)
-    #push_mail(infosUser, connection, cursor, types)
-    cursor.close()
-    
-if __name__ == "__main__":
-    main()
+#push_specialisation(infosDiploma, connection, cursor)
+#push_type_utilisateur(infosUser, connection, cursor)
+types = push_type_mail(infosUser, connection, cursor, types)
+types = push_type_adress(infosUser, connection, cursor, types)
+push_mail(infosUser, connection, cursor, types)
+cursor.close()
