@@ -63,7 +63,7 @@ CREATE TABLE public.diplome (
                 ref_diploma VARCHAR(128) NOT NULL,
                 id_specialisation INTEGER,
                 id_ecole VARCHAR(128) NOT NULL,
-                nom_diplome VARCHAR(128) NOT NULL,
+                nom_diplome VARCHAR(256) NOT NULL,
                 parcours VARCHAR(128) NOT NULL,
                 CONSTRAINT diplome_pk PRIMARY KEY (id_diplome)
 );
