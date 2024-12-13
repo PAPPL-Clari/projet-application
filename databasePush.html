@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: module databasePush</title>
+</head><body>
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title">databasePush</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:c%3A%5Cusers%5Cuser%5Cdocuments%5Cinfosi%5Cpappl%5Cdatabasepush.py">c:\users\user\documents\infosi\pappl\databasepush.py</a></td></tr></table>
+    <p><span class="code">#%%</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+    
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="asyncio.html">asyncio</a><br>
+<a href="config.html">config</a><br>
+</td><td class="multicolumn"><a href="json.html">json</a><br>
+<a href="nest_asyncio.html">nest_asyncio</a><br>
+</td><td class="multicolumn"><a href="psycopg2.html">psycopg2</a><br>
+</td><td class="multicolumn"></td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+    
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-format"><strong>format</strong></a>(str)</dt><dd><span class="code">Format&nbsp;a&nbsp;string&nbsp;in&nbsp;order&nbsp;to&nbsp;avoid&nbsp;SQL&nbsp;query&nbsp;errors.<br>
+Remove&nbsp;special&nbsp;characters,&nbsp;replace&nbsp;single&nbsp;quotes&nbsp;to&nbsp;double&nbsp;'&nbsp;-&gt;&nbsp;''<br>
+and&nbsp;puts&nbsp;an&nbsp;initial&nbsp;'&nbsp;in&nbsp;the&nbsp;beginning&nbsp;and&nbsp;end&nbsp;of&nbsp;the&nbsp;string.<br>
+Ex:&nbsp;Côte&nbsp;d'Ivoire&nbsp;-&gt;&nbsp;'Cote&nbsp;d''Ivoire'<br>
+&nbsp;<br>
+:param&nbsp;str:&nbsp;A&nbsp;string<br>
+:return:&nbsp;str:&nbsp;Modified&nbsp;string</span></dd></dl>
+ <dl><dt><a name="-format_adress"><strong>format_adress</strong></a>(adress)</dt><dd><span class="code">Format&nbsp;adress&nbsp;names&nbsp;in&nbsp;order&nbsp;to&nbsp;fit&nbsp;in&nbsp;128&nbsp;characters.<br>
+:param&nbsp;adress:&nbsp;A&nbsp;string<br>
+:return:&nbsp;adress:&nbsp;String&nbsp;with&nbsp;128&nbsp;characters</span></dd></dl>
+ <dl><dt><a name="-format_code_postal"><strong>format_code_postal</strong></a>(code)</dt><dd><span class="code">Format&nbsp;zip&nbsp;code&nbsp;in&nbsp;order&nbsp;to&nbsp;normalise&nbsp;data.<br>
+Verifies&nbsp;if&nbsp;its&nbsp;an&nbsp;integer,&nbsp;if&nbsp;not,&nbsp;defines&nbsp;it&nbsp;as&nbsp;zero.<br>
+&nbsp;<br>
+:param&nbsp;name:&nbsp;A&nbsp;zip&nbsp;code,&nbsp;string&nbsp;format<br>
+:return:&nbsp;modified&nbsp;code</span></dd></dl>
+ <dl><dt><a name="-format_name"><strong>format_name</strong></a>(city_name)</dt><dd><span class="code">Format&nbsp;names&nbsp;in&nbsp;order&nbsp;to&nbsp;normalise&nbsp;data.<br>
+Removes&nbsp;special&nbsp;characters,&nbsp;hifens&nbsp;and&nbsp;substitues&nbsp;single&nbsp;''&nbsp;to&nbsp;double,<br>
+Put&nbsp;every&nbsp;first&nbsp;character&nbsp;of&nbsp;a&nbsp;word&nbsp;with&nbsp;majuscule&nbsp;and&nbsp;the&nbsp;other&nbsp;minuscule.<br>
+Ex:&nbsp;SUCE-SUR-ERDRE&nbsp;turns&nbsp;to&nbsp;Suce&nbsp;Sur&nbsp;Erdre<br>
+&nbsp;<br>
+:param&nbsp;name:&nbsp;A&nbsp;string<br>
+:return:&nbsp;normalized_name:&nbsp;String</span></dd></dl>
+ <dl><dt><a name="-init"><strong>init</strong></a>()</dt><dd><span class="code">Open&nbsp;a&nbsp;new&nbsp;connection&nbsp;with&nbsp;the&nbsp;local&nbsp;database.<br>
+&nbsp;<br>
+:param:&nbsp;None<br>
+:return:&nbsp;connection:&nbsp;a&nbsp;connection&nbsp;objet&nbsp;to&nbsp;the&nbsp;database<br>
+:return:&nbsp;cursor:&nbsp;cursor&nbsp;of&nbsp;the&nbsp;connexion</span></dd></dl>
+ <dl><dt><a name="-jprint"><strong>jprint</strong></a>(obj)</dt><dd><span class="code">Print&nbsp;JSON&nbsp;objet&nbsp;with&nbsp;identation.<br>
+&nbsp;<br>
+:param&nbsp;obj:&nbsp;A&nbsp;string&nbsp;in&nbsp;format&nbsp;JSON<br>
+:return:&nbsp;returns&nbsp;nothing</span></dd></dl>
+ <dl><dt><a name="-push_adresse"><strong>push_adresse</strong></a>(infosUser, connection, cursor)</dt><dd><span class="code">Insert&nbsp;all&nbsp;adresses&nbsp;in&nbsp;the&nbsp;table&nbsp;adresse.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;main&nbsp;adress&nbsp;(adress&nbsp;1)&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;<br>
+:param&nbsp;infosUser:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Users&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database<br>
+:return&nbsp;list_adresses:&nbsp;array&nbsp;list&nbsp;of&nbsp;all&nbsp;adresses&nbsp;saved&nbsp;in&nbsp;the&nbsp;database&nbsp;(adress&nbsp;1&nbsp;to&nbsp;4)</span></dd></dl>
+ <dl><dt><a name="-push_diplome"><strong>push_diplome</strong></a>(infosDiploma, connection, cursor)</dt><dd><span class="code">Insert&nbsp;all&nbsp;diplomas&nbsp;in&nbsp;the&nbsp;table&nbsp;diplome.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;diplome&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;<br>
+:param&nbsp;infosDiploma:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Diplomas&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database</span></dd></dl>
+ <dl><dt><a name="-push_ecoles"><strong>push_ecoles</strong></a>(infosDiploma, connection, cursor)</dt><dd><span class="code">Insert&nbsp;all&nbsp;schools&nbsp;in&nbsp;the&nbsp;table&nbsp;ecole.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;school&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;<br>
+:param&nbsp;infosDiploma:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Diplomas&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database</span></dd></dl>
+ <dl><dt><a name="-push_mail"><strong>push_mail</strong></a>(infosUser, connection, cursor, types)</dt><dd><span class="code">Insert&nbsp;all&nbsp;emails&nbsp;adress&nbsp;in&nbsp;the&nbsp;table&nbsp;mail.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;type&nbsp;doesn't&nbsp;exist.<br>
+Doesn't&nbsp;update&nbsp;data.<br>
+&nbsp;<br>
+:param&nbsp;infosUser:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Users&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;types:&nbsp;array&nbsp;list&nbsp;of&nbsp;types&nbsp;already&nbsp;existing&nbsp;in&nbsp;the&nbsp;database</span></dd></dl>
+ <dl><dt><a name="-push_specialisation"><strong>push_specialisation</strong></a>(infosDiploma, connection, cursor)</dt><dd><span class="code">Insert&nbsp;all&nbsp;specialisations&nbsp;in&nbsp;the&nbsp;table&nbsp;specialisation.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;specialisation&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;<br>
+:param&nbsp;infosDiploma:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Diploma&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database</span></dd></dl>
+ <dl><dt><a name="-push_type_adress"><strong>push_type_adress</strong></a>(infosUser, connection, cursor, types)</dt><dd><span class="code">Insert&nbsp;all&nbsp;type&nbsp;of&nbsp;adress&nbsp;in&nbsp;the&nbsp;table&nbsp;type.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;type&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;<br>
+:param&nbsp;infosUser:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Users&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;types:&nbsp;array&nbsp;list&nbsp;of&nbsp;types&nbsp;already&nbsp;existing&nbsp;in&nbsp;the&nbsp;database<br>
+:return&nbsp;types:&nbsp;array&nbsp;list&nbsp;of&nbsp;the&nbsp;types&nbsp;saved&nbsp;in&nbsp;the&nbsp;database</span></dd></dl>
+ <dl><dt><a name="-push_type_mail"><strong>push_type_mail</strong></a>(infosUser, connection, cursor, types)</dt><dd><span class="code">Insert&nbsp;all&nbsp;type&nbsp;of&nbsp;emails&nbsp;in&nbsp;the&nbsp;table&nbsp;type.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;type&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;<br>
+:param&nbsp;infosUser:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Users&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;types:&nbsp;array&nbsp;list&nbsp;of&nbsp;types&nbsp;already&nbsp;existing&nbsp;in&nbsp;the&nbsp;database<br>
+:return&nbsp;types:&nbsp;array&nbsp;list&nbsp;of&nbsp;the&nbsp;types&nbsp;saved&nbsp;in&nbsp;the&nbsp;database</span></dd></dl>
+ <dl><dt><a name="-push_type_utilisateur"><strong>push_type_utilisateur</strong></a>(infosUser, connection, cursor)</dt><dd><span class="code">Insert&nbsp;all&nbsp;type&nbsp;of&nbsp;users&nbsp;in&nbsp;the&nbsp;table&nbsp;type_utilisateur.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;type&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;<br>
+:param&nbsp;infosUser:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Users&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database</span></dd></dl>
+ <dl><dt><a name="-push_ville"><strong>push_ville</strong></a>(infosUser, connection, cursor)</dt><dd><span class="code">Insert&nbsp;all&nbsp;cities&nbsp;present&nbsp;in&nbsp;the&nbsp;API&nbsp;in&nbsp;the&nbsp;table&nbsp;ville.<br>
+Verifies&nbsp;duplicity&nbsp;of&nbsp;data&nbsp;and&nbsp;add&nbsp;if&nbsp;the&nbsp;city&nbsp;doesn't&nbsp;exist.<br>
+&nbsp;<br>
+:param&nbsp;infosUser:&nbsp;List&nbsp;of&nbsp;all&nbsp;infos&nbsp;of&nbsp;Users&nbsp;in&nbsp;the&nbsp;API<br>
+:param&nbsp;connection:&nbsp;Connection&nbsp;object&nbsp;to&nbsp;the&nbsp;database<br>
+:param&nbsp;cursor:&nbsp;Cursor&nbsp;object&nbsp;of&nbsp;connection&nbsp;to&nbsp;the&nbsp;database<br>
+:return&nbsp;villes:&nbsp;List&nbsp;of&nbsp;cities&nbsp;present&nbsp;in&nbsp;the&nbsp;database</span></dd></dl>
+</td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+    
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<strong>connection</strong> = &lt;connection object at 0x00000178EDDA3890; dsn: '...bname=PAPPL host=localhost port=5432', closed: 0&gt;<br>
+<strong>cursor</strong> = &lt;cursor object at 0x00000178CE816F80; closed: -1&gt;<br>
+<strong>end_time</strong> = datetime.datetime(2024, 12, 13, 19, 31, 5, 859501)<br>
+<strong>start_time</strong> = datetime.datetime(2024, 12, 13, 19, 29, 12, 69820)<br>
+<strong>types</strong> = ["'primary'", "'email_for_life'", "'professional'", "'secondary'"]<br>
+<strong>villes</strong> = ["'Baoshan Qu'", "'Paris'", "'Madrid'", "'Nantes'", "'Sainte Luce Loire'", "'Chicago'", "'Reze'", "'Courbevoie'", "'Picauville'", "'Tampere'", "'Houston'", "'Sartrouville'", "'Paris La Defense'", "'Santa Clara'", "'Pudong Xinqu'", "'Setagaya'", "'Meguro'", "'Carquefou'", "'Chelles'", "'Lencois Paulista'", ...]</td></tr></table>
+</body></html>

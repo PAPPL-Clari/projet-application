@@ -9,6 +9,7 @@ from extractInfo.getDiplomaInfo import getDiplomaInfo
 from extractInfo.getUtilisateurInfo import getUtilisateurInfo
 from extractInfo.getMailsInfo import getMailsInfo
 from extractInfo.getAdressesInfo import getAdressesInfo
+from extractInfo.getPersonneInfo import getPersonneInfo
 from datetime import datetime
 
 def jprint(obj):
@@ -22,7 +23,7 @@ def jprint(obj):
     text = json.dumps(obj, sort_keys=True, indent=4)
     print(text)
 
-def format_city_name(city_name):
+def format_name(city_name):
     """
     Format names in order to normalise data.
     Removes special characters, hifens and substitues single '' to double,
@@ -41,6 +42,34 @@ def format_city_name(city_name):
     normalized_name = "'" + normalized_name + "'"
 
     return normalized_name
+
+def format_adress(adress):
+    """
+    Format adress names in order to fit in 128 characters.
+    :param adress: A string
+    :return: adress: String with 128 characters
+
+    """
+    adress = format_name(adress)
+    if (len(adress)> 127):
+        adress = adress[:128]+ "'"
+    return adress
+
+def format_code_postal(code):
+    """
+    Format zip code in order to normalise data.
+    Verifies if its an integer, if not, defines it as zero.
+
+    :param name: A zip code, string format
+    :return: modified code 
+    """
+    try:
+        code = int(code[0:5])
+        return code
+    except ValueError:
+        code = 0
+
+    return code
 
 def format(str):
     """
@@ -78,6 +107,14 @@ def init():
 
 # Adds data to the table "specialisation"
 def push_specialisation(infosDiploma, connection, cursor):
+    """
+    Insert all specialisations in the table specialisation.
+    Verifies duplicity of data and add if the specialisation doesn't exist.
+
+    :param infosDiploma: List of all infos of Diploma in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    """
     print("Ajout des specialisations à la base de données...")
     specialisations = []
 
@@ -111,6 +148,14 @@ def push_specialisation(infosDiploma, connection, cursor):
 
 # Adds data to the table "type_utilisateur"
 def push_type_utilisateur(infosUser, connection, cursor):
+    """
+    Insert all type of users in the table type_utilisateur.
+    Verifies duplicity of data and add if the type doesn't exist.
+
+    :param infosUser: List of all infos of Users in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    """
     print("Ajout des types d'utilisateur à la base de données...")
     type_utilisateurs = []
 
@@ -145,6 +190,16 @@ def push_type_utilisateur(infosUser, connection, cursor):
 
 #Adds data type_mail to table "type"
 def push_type_mail(infosUser, connection, cursor, types):
+    """
+    Insert all type of emails in the table type.
+    Verifies duplicity of data and add if the type doesn't exist.
+
+    :param infosUser: List of all infos of Users in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    :param types: array list of types already existing in the database
+    :return types: array list of the types saved in the database
+    """
     print("Ajout des types de mail à la base de données...")
     for info in infosUser: 
         if '_embedded' in info:
@@ -177,6 +232,16 @@ def push_type_mail(infosUser, connection, cursor, types):
 
 #Add data type_adress to table "type"
 def push_type_adress(infosUser, connection, cursor, types):
+    """
+    Insert all type of adress in the table type.
+    Verifies duplicity of data and add if the type doesn't exist.
+
+    :param infosUser: List of all infos of Users in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    :param types: array list of types already existing in the database
+    :return types: array list of the types saved in the database
+    """
     print("Ajout des types d'adresse à la base de données...")
     for info in infosUser: 
         if '_embedded' in info:
@@ -210,6 +275,16 @@ def push_type_adress(infosUser, connection, cursor, types):
 
 # Add data mail to table mail
 def push_mail(infosUser, connection, cursor, types):
+    """
+    Insert all emails adress in the table mail.
+    Verifies duplicity of data and add if the type doesn't exist.
+    Doesn't update data.
+
+    :param infosUser: List of all infos of Users in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    :param types: array list of types already existing in the database
+    """
     print("Ajout des données de mail à la base de données...")
     mails = []
 
@@ -261,20 +336,27 @@ def push_mail(infosUser, connection, cursor, types):
 
 # Add city data to table ville
 def push_ville(infosUser, connection, cursor):
+    """
+    Insert all cities present in the API in the table ville.
+    Verifies duplicity of data and add if the city doesn't exist.
+
+    :param infosUser: List of all infos of Users in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    :return villes: List of cities present in the database
+    """
     print("Ajout des villes à la base de données...")
     villes = []
     for info in infosUser: 
         if '_embedded' in info:
             if 'address' in info["_embedded"]:
-                #jprint(info)
-
                 adresses = getAdressesInfo(info["_embedded"]["address"])
 
                 for adresse in adresses:
                     ville = adresses[adresse]["ville"]
                     nom_pays = adresses[adresse]["nomPays"]
 
-                    ville = format_city_name(ville)
+                    ville = format_name(ville)
                     nom_pays = "'" + nom_pays + "'"
 
                     if ville != "''" and ville not in villes:
@@ -308,6 +390,15 @@ def push_ville(infosUser, connection, cursor):
 
 # Add address data to table adresse
 def push_adresse(infosUser, connection, cursor):
+    """
+    Insert all adresses in the table adresse.
+    Verifies duplicity of data and add if the main adress (adress 1) doesn't exist.
+
+    :param infosUser: List of all infos of Users in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    :return list_adresses: array list of all adresses saved in the database (adress 1 to 4)
+    """
     print("Ajout des adresses à la base de données...")
     list_adresses = []
 
@@ -330,62 +421,67 @@ def push_adresse(infosUser, connection, cursor):
                     nom_pays = adresses[adresse]["nomPays"]
                     
                     type = format(adresse)
-                    adresse1 = format_city_name(adresse1)
-                    adresse2 = format_city_name(adresse2)
-                    adresse3 = format_city_name(adresse3)
-                    adresse4 = format_city_name(adresse4)
-                    #code_postal = format_code_postal(code_postal)
-                    nom_ville = format_city_name(nom_ville)
+                    adresse1 = format_adress(adresse1)
+                    adresse2 = format_adress(adresse2)
+                    adresse3 = format_adress(adresse3)
+                    adresse4 = format_adress(adresse4)
+                    nom_ville = format_name(nom_ville)
+                    code_postal = format_code_postal(code_postal)
 
                     nom_pays = "'" + nom_pays + "'"
-                    #print(adresse1, adresse2, adresse3, adresse4, code_postal, npai, nom_ville, nom_pays)
-                    condition = (adresse1 != "''" and adresse1 not in list_adresses) and (adresse2 != "''" and adresse2 not in list_adresses) and (adresse3 != "''" and adresse3 not in list_adresses) and (adresse4 != "''" and adresse4 not in list_adresses) and code_postal != ''
-                    
-                    if condition:
-                        list_adresses.append(adresse1)
-                        list_adresses.append(adresse2)
-                        list_adresses.append(adresse3)
-                        list_adresses.append(adresse4)
-                        
-                        # Check if the adress already exists
-                        '''check_sql = f"""
+
+                    if adresse1 != "''" and adresse1 not in list_adresses:
+                        # Check if the main adress already exists
+                        check_sql = f"""
                         SELECT adresse_id FROM adresse WHERE adresse_1 = {adresse1};
                         """
                         cursor.execute(check_sql)
-                        result_adress = cursor.fetchone()'''
+                        result_adress1 = cursor.fetchone()
+                        
+                        #L'adresse n'existe pas
+                        if not result_adress1 and code_postal != '': 
+                            list_adresses.append(adresse1)
+                            list_adresses.append(adresse2)
+                            list_adresses.append(adresse3)
+                            list_adresses.append(adresse4)
 
-                        #Check if the city exists
-                        check_sql = f"""
-                        SELECT id_ville FROM ville WHERE nom_ville = {nom_ville};
-                        """
-                        cursor.execute(check_sql)
-                        result_city = cursor.fetchone()
-
-                        #Check if the type exists
-                        check_sql = f"""
-                        SELECT id_type FROM type WHERE nom_type = {type};
-                        """
-                        cursor.execute(check_sql)
-                        result_type = cursor.fetchone()
-
-                        #print(result_adress, result_city, result_type)
-
-                        if result_city != None and result_type != None:  # Insert only if it does not exist
-                            result_city = result_city[0]
-                            result_type = result_type[0]
-                            type_adresse = format(adresse)
-                            sql = f"""
-                            INSERT INTO adresse (adresse_1, adresse_2, adresse_3, adresse_4, id_ville, npai, code_postal, type_adresse, id_type)
-                            VALUES ({adresse1}, {adresse2}, {adresse3}, {adresse4}, {result_city}, {npai}, {code_postal}, {type_adresse}, {result_type});
+                            #Check if the city exists
+                            check_sql = f"""
+                            SELECT id_ville FROM ville WHERE nom_ville = {nom_ville};
                             """
-                            #print(sql)
-                            cursor.execute(sql)
-                            connection.commit()
+                            cursor.execute(check_sql)
+                            result_city = cursor.fetchone()
+
+                            #Check if the type exists
+                            check_sql = f"""
+                            SELECT id_type FROM type WHERE nom_type = {type};
+                            """
+                            cursor.execute(check_sql)
+                            result_type = cursor.fetchone()
+
+                            if result_city != None and result_type != None:  # Insert only if it does not exist
+                                result_city = result_city[0]
+                                result_type = result_type[0]
+                                type_adresse = format(adresse)
+                                sql = f"""
+                                INSERT INTO adresse (adresse_1, adresse_2, adresse_3, adresse_4, id_ville, npai, code_postal, type_adresse, id_type)
+                                VALUES ({adresse1}, {adresse2}, {adresse3}, {adresse4}, {result_city}, {npai}, {code_postal}, {type_adresse}, {result_type});
+                                """
+                                cursor.execute(sql)
+                                connection.commit()
     print("Succès à l'ajout des adresses à la base de données.")
-    return adresses
+    return list_adresses
 
 #Add school data to table ecole
 def push_ecoles(infosDiploma, connection, cursor):
+    """
+    Insert all schools in the table ecole.
+    Verifies duplicity of data and add if the school doesn't exist.
+
+    :param infosDiploma: List of all infos of Diplomas in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    """
     print("Ajout des écoles à la base de données...")
     ecoles = []
 
@@ -397,7 +493,7 @@ def push_ecoles(infosDiploma, connection, cursor):
             nom_ecole = DiplomaInfo[0]["nom_ecole"]
             acronyme_pays = DiplomaInfo[0]["acronyme_pays_ecole"]
 
-            nom_ecole = format_city_name(nom_ecole)
+            nom_ecole = format_name(nom_ecole)
             acronyme_pays = format(acronyme_pays)
 
             if nom_ecole != "''" and nom_ecole not in ecoles:
@@ -426,7 +522,16 @@ def push_ecoles(infosDiploma, connection, cursor):
                     ecoles.append(nom_ecole)
     print("Succès à l'ajout des ecoles à la base de données.")
 
+#Add diplome data to table diplome
 def push_diplome(infosDiploma, connection, cursor):
+    """
+    Insert all diplomas in the table diplome.
+    Verifies duplicity of data and add if the diplome doesn't exist.
+
+    :param infosDiploma: List of all infos of Diplomas in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    """
     print("Ajout des diplomes à la base de données...")
     diplomes = []
 
@@ -443,9 +548,9 @@ def push_diplome(infosDiploma, connection, cursor):
             parcours = DiplomaInfo[0]["parcours"]
 
             ref_diploma = format(ref_diploma)
-            nom_ecole = format_city_name(nom_ecole)
-            nom_diplome = format_city_name(nom_diplome)
-            parcours = format_city_name(parcours)
+            nom_ecole = format_name(nom_ecole)
+            nom_diplome = format_name(nom_diplome)
+            parcours = format_name(parcours)
 
             nom_specialisation = format(nom_specialisation)
 
@@ -518,7 +623,7 @@ push_diplome(infosDiploma, connection, cursor)
 cursor.close()
 
 end_time = datetime.now()
-print('Duration de la mise en base de donnees: {}'.format(end_time - start_time))
+print('Durée de la mise à jour de la base de donnees: {}'.format(end_time - start_time))
 
 
 # %%

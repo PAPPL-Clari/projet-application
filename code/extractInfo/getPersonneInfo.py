@@ -1,5 +1,5 @@
 #txt: entree du type json pour extraire les infos pertinentes de la personne
-#return: dictionary avec les infos de prenom, nom, id, school_ref, dateNaissance, nationalite
+#return: dictionary avec les infos de prenom, nom, id, school_ref, dateNaissance, nationalite (acronyme)
 def getPersonneInfo(result):
     infosPersonnelles = dict()
     
@@ -25,7 +25,7 @@ def getPersonneInfo(result):
     # Date de naissance (jj/mm/aaaa)	
     dateNaissance = result["_embedded"]["civil"]["birthdate"]
 
-    # Nationalité	
+    # Nationalité (nom du pays)
     nationalite = result["_embedded"]["civil"]["_embedded"]["nationality"]["name"]
 
     # Genre  -- NAO TEM NA DATABASE!! TERIA QUE ADICIONAR 
