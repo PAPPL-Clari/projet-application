@@ -12,10 +12,26 @@ from extractInfo.getAdressesInfo import getAdressesInfo
 from datetime import datetime
 
 def jprint(obj):
+    """
+    Print JSON objet with identation.
+
+    :param obj: A string in format JSON
+    :return: returns nothing
+    """
+
     text = json.dumps(obj, sort_keys=True, indent=4)
     print(text)
 
 def format_city_name(city_name):
+    """
+    Format names in order to normalise data.
+    Removes special characters, hifens and substitues single '' to double,
+    Put every first character of a word with majuscule and the other minuscule.
+    Ex: SUCE-SUR-ERDRE turns to Suce Sur Erdre
+
+    :param name: A string
+    :return: normalized_name: String 
+    """
     city_name = unidecode(city_name)
     city_name = city_name.lower()
     city_name = city_name.replace('-', ' ')
@@ -26,14 +42,16 @@ def format_city_name(city_name):
 
     return normalized_name
 
-def format_code_postal(code_postal):
-    code_postal = unidecode(code_postal)
-    str = str.replace("'", "''")
-    str = "'" + str + "'"
-
-    return str
-
 def format(str):
+    """
+    Format a string in order to avoid SQL query errors.
+    Remove special characters, replace single quotes to double ' -> ''
+    and puts an initial ' in the beginning and end of the string.
+    Ex: Côte d'Ivoire -> 'Cote d''Ivoire'
+
+    :param str: A string
+    :return: str: Modified string 
+    """
     str = unidecode(str)
     str = str.replace("'", "''")
     str = "'" + str + "'"
@@ -41,6 +59,13 @@ def format(str):
     return str
 
 def init():
+    """
+    Open a new connection with the local database.
+
+    :param: None
+    :return: connection: a connection objet to the database
+    :return: cursor: cursor of the connexion
+    """
     print("Établissement de la connexion à la base de données...")
     connection = psycopg2.connect(database=config.database,
                                 user= config.login,
@@ -401,6 +426,66 @@ def push_ecoles(infosDiploma, connection, cursor):
                     ecoles.append(nom_ecole)
     print("Succès à l'ajout des ecoles à la base de données.")
 
+def push_diplome(infosDiploma, connection, cursor):
+    print("Ajout des diplomes à la base de données...")
+    diplomes = []
+
+    for info in infosDiploma: 
+        if '_embedded' in info and 'diplomas' in info["_embedded"]:
+            DiplomaInfo = getDiplomaInfo(info)
+
+            # Prepare school name and country's acronymn
+            id_diplome = DiplomaInfo[0]["id_diplome"]
+            ref_diploma = DiplomaInfo[0]["ref_diplome"]
+            nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
+            nom_ecole = DiplomaInfo[0]["nom_ecole"]
+            nom_diplome = DiplomaInfo[0]["nom_diplome"] 
+            parcours = DiplomaInfo[0]["parcours"]
+
+            ref_diploma = format(ref_diploma)
+            nom_ecole = format_city_name(nom_ecole)
+            nom_diplome = format_city_name(nom_diplome)
+            parcours = format_city_name(parcours)
+
+            nom_specialisation = format(nom_specialisation)
+
+            if nom_diplome != "''" and nom_diplome not in diplomes:
+                # Check if the diplome already exists
+                check_sql = f"""
+                SELECT id_diplome FROM diplome WHERE nom_diplome = {nom_diplome};
+                """
+                cursor.execute(check_sql)
+                result = cursor.fetchone()
+
+                # Search id for specialisation
+                check_sql = f"""
+                SELECT id_specialisation FROM specialisation WHERE nom_specialisation = {nom_specialisation};
+                """
+                cursor.execute(check_sql)
+                result_spec = cursor.fetchone()
+
+                #Search id for school
+                check_sql = f"""
+                SELECT id_ecole FROM ecole WHERE nom_ecole = {nom_ecole};
+                """
+                cursor.execute(check_sql)
+                result_ecole = cursor.fetchone()
+
+                if not result and result_spec and result_ecole:  # Insert only if it does not exist
+                    id_specialisation = result_spec[0]
+                    id_ecole = result_ecole[0]
+                    sql = f"""
+                            INSERT INTO diplome (id_diplome, ref_diploma, id_specialisation, id_ecole, 
+                                                 nom_diplome, parcours)
+                            VALUES ({id_diplome}, {ref_diploma}, {id_specialisation}, {id_ecole}, {nom_diplome}, {parcours});
+                            """
+                    print(sql)
+                    cursor.execute(sql)
+                    connection.commit()
+
+                    diplomes.append(nom_diplome)
+    print("Succès à l'ajout des diplomes à la base de données.")
+
 #%% Charge data from API
 import nest_asyncio
 nest_asyncio.apply()
@@ -429,6 +514,7 @@ push_mail(infosUser, connection, cursor, types)
 villes = push_ville(infosUser, connection, cursor)
 adresses= push_adresse(infosUser, connection, cursor)
 push_ecoles(infosDiploma, connection, cursor)
+push_diplome(infosDiploma, connection, cursor)
 cursor.close()
 
 end_time = datetime.now()
