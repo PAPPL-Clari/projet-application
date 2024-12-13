@@ -15,28 +15,46 @@ def jprint(obj):
     text = json.dumps(obj, sort_keys=True, indent=4)
     print(text)
 
+def format_city_name(city_name):
+    city_name = unidecode(city_name)
+    city_name = city_name.lower()
+    city_name = city_name.replace('-', ' ')
+    city_name = ' '.join(city_name.split())
+    normalized_name = city_name.title()
+    normalized_name = normalized_name.replace("'", "''")
+    normalized_name = "'" + normalized_name + "'"
+
+    return normalized_name
+
+def format_code_postal(code_postal):
+    code_postal = unidecode(code_postal)
+    str = str.replace("'", "''")
+    str = "'" + str + "'"
+
+    return str
+
+def format(str):
+    str = unidecode(str)
+    str = str.replace("'", "''")
+    str = "'" + str + "'"
+
+    return str
+
 def init():
-<<<<<<< HEAD
-=======
-    """
-    Realise la connection à la base de données locale
-    args:
-    return:
-        connection: connexion à la base de données
-        cursor: cursor pour faire les requêtes
-    """
->>>>>>> fb9c58d (Commit to pull)
+    print("Établissement de la connexion à la base de données...")
     connection = psycopg2.connect(database=config.database,
                                 user= config.login,
                                 password=config.password,
                                 host="localhost", port=5432)
     cursor = connection.cursor() # Open a cursor to perform database operations
+    print("Connexion à la base de données établi.")
+
     return connection, cursor
 
 # Adds data to the table "specialisation"
 def push_specialisation(infosDiploma, connection, cursor):
+    print("Ajout des specialisations à la base de données...")
     specialisations = []
-<<<<<<< HEAD
 
     for info in infosDiploma: 
         if '_embedded' in info and 'diplomas' in info["_embedded"]:
@@ -64,34 +82,11 @@ def push_specialisation(infosDiploma, connection, cursor):
                     connection.commit()
 
                 specialisations.append(nom_specialisation)
-=======
-    i = 0
-    for info in infosDiploma: 
-        if '_embedded' in info:
-            if 'diplomas' in info["_embedded"]:
-                DiplomaInfo = getDiplomaInfo(info)
-
-                #Put specialisation info in database
-                nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
-                nom_specialisation = nom_specialisation.replace("'", "''")
-                nom_specialisation = "'" + nom_specialisation + "'"
-                
-                if nom_specialisation != "''" and nom_specialisation not in specialisations:
-                    id_diplome = "\"" + DiplomaInfo[0]["id_diplome"] + "\""
-                    sql = f"INSERT INTO specialisation (id_specialisation, nom_specialisation) VALUES ({i},{nom_specialisation});"
-                    print(sql)
-                    
-                    cur = connection.cursor()
-                    specialisations.append(nom_specialisation)
-
-                    cursor.execute(sql)
-                    connection.commit()
-                    cur.close()
-                i=i+1
->>>>>>> fb9c58d (Commit to pull)
+    print("Succès à l'ajout des specialisations à la base de données.")
 
 # Adds data to the table "type_utilisateur"
 def push_type_utilisateur(infosUser, connection, cursor):
+    print("Ajout des types d'utilisateur à la base de données...")
     type_utilisateurs = []
 
     for info in infosUser: 
@@ -104,7 +99,6 @@ def push_type_utilisateur(infosUser, connection, cursor):
                 nom_type_utilisateur = "'" + nom_type_utilisateur + "'"
 
                 if nom_type_utilisateur != "''" and nom_type_utilisateur not in type_utilisateurs:
-<<<<<<< HEAD
                     # Check if the specialization already exists
                     check_sql = f"""
                     SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = {nom_type_utilisateur};
@@ -122,21 +116,11 @@ def push_type_utilisateur(infosUser, connection, cursor):
                         
                         cursor.execute(sql)
                         connection.commit()
-=======
-                    sql = f"INSERT INTO type_utilisateur (id_type_utilisateur, nom_type_utilisateur) VALUES ({i},{nom_type_utilisateur});"
-                    print(sql)
-                    
-                    cur = connection.cursor()
-                    type_utilisateurs.append(nom_type_utilisateur)
-
-                    cursor.execute(sql)
-                    connection.commit()
-                    cur.close()
->>>>>>> fb9c58d (Commit to pull)
+    print("Succès à l'ajout des types d'utilisateur à la base de données.")
 
 #Adds data type_mail to table "type"
 def push_type_mail(infosUser, connection, cursor, types):
-    
+    print("Ajout des types de mail à la base de données...")
     for info in infosUser: 
         if '_embedded' in info:
             if 'emails' in info["_embedded"]:
@@ -148,7 +132,6 @@ def push_type_mail(infosUser, connection, cursor, types):
                     nom = "'" + nom + "'"
 
                     if nom != "''" and nom not in types:
-<<<<<<< HEAD
                         types.append(nom)
                         # Check if the specialization already exists
                         check_sql = f"""
@@ -164,33 +147,12 @@ def push_type_mail(infosUser, connection, cursor, types):
                             """
                             cursor.execute(sql)
                             connection.commit()
-=======
-                        sql = f"INSERT INTO type (nom_type) VALUES ({nom});"
-                        print(sql)
-                        types.append(nom)
-
-                        cur = connection.cursor()
-                        cursor.execute(sql)
-                        connection.commit()
-                        cur.close()
->>>>>>> fb9c58d (Commit to pull)
+    print("Succès à l'ajout des types de mail à la base de données.")
     return types
 
 #Add data type_adress to table "type"
 def push_type_adress(infosUser, connection, cursor, types):
-<<<<<<< HEAD
-=======
-    """
-    Fait l'insertion du type d'adresse dans le tableau "type"
-    args:
-        infosUser: vecteur avec tous les pages de la requête à l'api
-        connection: connection à la base de données locale
-        cursor: cursor 
-        types: 
-    return:
-    """
-    types = []
->>>>>>> fb9c58d (Commit to pull)
+    print("Ajout des types d'adresse à la base de données...")
     for info in infosUser: 
         if '_embedded' in info:
             if 'address' in info["_embedded"]:
@@ -203,7 +165,6 @@ def push_type_adress(infosUser, connection, cursor, types):
                     nom = "'" + nom + "'"
 
                     if nom != "''" and nom not in types:
-<<<<<<< HEAD
                         types.append(nom)
                         # Check if the specialization already exists
                         check_sql = f"""
@@ -219,10 +180,12 @@ def push_type_adress(infosUser, connection, cursor, types):
                             """
                             cursor.execute(sql)
                             connection.commit()
+    print("Succès à l'ajout des types d'adresse à la base de données.")
     return types
 
 # Add data mail to table mail
 def push_mail(infosUser, connection, cursor, types):
+    print("Ajout des données de mail à la base de données...")
     mails = []
 
     # Recupera todos os tipos de ID
@@ -268,108 +231,162 @@ def push_mail(infosUser, connection, cursor, types):
 
                     mails.append(newMail)
 
+    print("Succès à l'ajout des mails à la base de données.")
     connection.commit()
 
-# Add data mail to table ville
-#def push_ville(infosUser, connection, cursor)
+# Add city data to table ville
+def push_ville(infosUser, connection, cursor):
+    print("Ajout des villes à la base de données...")
+    villes = []
+    for info in infosUser: 
+        if '_embedded' in info:
+            if 'address' in info["_embedded"]:
+                #jprint(info)
 
+                adresses = getAdressesInfo(info["_embedded"]["address"])
 
-#%%
+                for adresse in adresses:
+                    ville = adresses[adresse]["ville"]
+                    nom_pays = adresses[adresse]["nomPays"]
+
+                    ville = format_city_name(ville)
+                    nom_pays = "'" + nom_pays + "'"
+
+                    if ville != "''" and ville not in villes:
+                        villes.append(ville)
+                        
+                        # Check if the city already exists
+                        check_sql = f"""
+                        SELECT id_ville FROM ville WHERE nom_ville = {ville};
+                        """
+                        cursor.execute(check_sql)
+                        result = cursor.fetchone()
+
+                        #Check if the country exists
+                        check_sql = f"""
+                        SELECT acronyme_pays FROM pays WHERE nom_pays = {nom_pays};
+                        """
+                        cursor.execute(check_sql)
+                        result_pays = cursor.fetchone()
+
+                        if not result and result_pays:  # Insert only if it does not exist
+                            pays = format(result_pays[0])
+  
+                            sql = f"""
+                            INSERT INTO ville (nom_ville, acronyme_pays)
+                            VALUES ({ville}, {pays});
+                            """
+                            cursor.execute(sql)
+                            connection.commit()
+    print("Succès à l'ajout des villes à la base de données.")
+    return villes
+
+# Add address data to table adresse
+def push_adresse(infosUser, connection, cursor):
+    print("Ajout des adresses à la base de données...")
+    list_adresses = []
+
+    for info in infosUser: 
+        if '_embedded' in info:
+            if 'address' in info["_embedded"]:
+                #jprint(info)
+
+                adresses = getAdressesInfo(info["_embedded"]["address"])
+
+                for adresse in adresses:
+                    adresse1 = adresses[adresse]["adresse_1"]
+                    adresse2 = adresses[adresse]["adresse_2"]
+                    adresse3 = adresses[adresse]["adresse_3"]
+                    adresse4 = adresses[adresse]["adresse_4"]
+                    code_postal = adresses[adresse]["code_postal"]
+                    npai = adresses[adresse]["npai"]
+                    nom_ville = adresses[adresse]["ville"]
+                    nom_pays = adresses[adresse]["nomPays"]
+                    
+                    type = format(adresse)
+                    adresse1 = format_city_name(adresse1)
+                    adresse2 = format_city_name(adresse2)
+                    adresse3 = format_city_name(adresse3)
+                    adresse4 = format_city_name(adresse4)
+                    #code_postal = format_code_postal(code_postal)
+                    nom_ville = format_city_name(nom_ville)
+                    nom_pays = format(nom_pays)
+
+                    nom_pays = "'" + nom_pays + "'"
+                    
+                    condition = (adresse1 != "''" and adresse1 not in list_adresses) and (adresse2 != "''" and adresse2 not in list_adresses) and (adresse3 != "''" and adresse3 not in list_adresses) and (adresse4 != "''" and adresse4 not in list_adresses) and code_postal != ''
+                    
+                    if condition:
+                        list_adresses.append(adresse1)
+                        list_adresses.append(adresse2)
+                        list_adresses.append(adresse3)
+                        list_adresses.append(adresse4)
+                        
+                        # Check if the adress already exists
+                        check_sql = f"""
+                        SELECT adresse_1 FROM adresse WHERE adresse_1 = {adresse1};
+                        """
+                        cursor.execute(check_sql)
+                        result_adress = cursor.fetchone()
+
+                        #Check if the city exists
+                        check_sql = f"""
+                        SELECT id_ville FROM ville WHERE nom_ville = {nom_ville};
+                        """
+                        cursor.execute(check_sql)
+                        result_city = cursor.fetchone()
+
+                        #Check if the type exists
+                        check_sql = f"""
+                        SELECT id_type FROM type WHERE nom_type = {type};
+                        """
+                        cursor.execute(check_sql)
+                        result_type = cursor.fetchone()
+
+                        if not result_adress and result_city:  # Insert only if it does not exist
+                            result_city = result_city[0]
+                            result_type = result_type[0]
+                            adresse = format(adresse)
+                            sql = f"""
+                            INSERT INTO adresse (adresse_1, adresse_2, adresse_3, adresse_4, id_ville, npai, code_postal, type_adresse, id_type)
+                            VALUES ({adresse1}, {adresse2}, {adresse3}, {adresse4}, {result_city}, {npai}, {code_postal}, {adresse}, {result_type});
+                            """
+                            cursor.execute(sql)
+                            connection.commit()
+    print("Succès à l'ajout des villes à la base de données.")
+    return adresses
+
+#%% Charge data from API
 import nest_asyncio
 nest_asyncio.apply()
-#start_time = datetime.now()
+start_time = datetime.now()
 
 infosDiploma = asyncio.run(fetchData_async("diploma"))
 infosUser = asyncio.run(fetchData_async("profile"))
 
-#end_time = datetime.now()
+end_time = datetime.now()
+print('Duration recuperation de donnees de l''API: {}'.format(end_time - start_time))
 
-#%%
-#print('Duration: {}'.format(end_time - start_time))
+#%% Push data in database
 
 connection, cursor = init()
 types = []
+villes = []
+adresses = []
 
-#push_specialisation(infosDiploma, connection, cursor)
-#push_type_utilisateur(infosUser, connection, cursor)
+start_time = datetime.now()
+
+push_specialisation(infosDiploma, connection, cursor)
+push_type_utilisateur(infosUser, connection, cursor)
 types = push_type_mail(infosUser, connection, cursor, types)
 types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
+villes = push_ville(infosUser, connection, cursor)
+adresses= push_adresse(infosUser, connection, cursor)
 cursor.close()
-=======
-                        sql = f"INSERT INTO type (nom_type) VALUES ({nom});"
-                        print(sql)
-                        types.append(nom)
 
-                        cur = connection.cursor()
-                        cursor.execute(sql)
-                        connection.commit()
-                        cur.close()
-    return types
+end_time = datetime.now()
+print('Duration de la mise en base de donnees: {}'.format(end_time - start_time))
 
 
-#Add data mail to table mail
-def push_mail(infosUser, connection, cursor, types):
-    mails = []
-
-    #Recupera all types id
-    idTypes = dict()
-
-    for type in types:
-        cur = connection.cursor()
-        
-        sqlRecup = f"SELECT id_type from type WHERE nom_type={type}"
-
-        cur.execute(sqlRecup)
-        index = cur.fetchall()
-
-        for id in index:
-            id = id[0]
-            idTypes.update({type: id})
-
-        cur.close()
-
-    print(idTypes)
-
-
-    for info in infosUser: 
-        if '_embedded' in info:
-            if 'emails' in info["_embedded"]:
-
-                infosMail = getMailsInfo(info["_embedded"]["emails"])
-                print(infosMail)
-
-                for keyName in infosMail.keys():
-                    newMail = infosMail[keyName].replace("'", "''")
-                    newMail = "'" + newMail + "'"
-                    infosMail.update({keyName: newMail})
-
-                    keyName = "'" + keyName + "'"
-
-                    if newMail != "''" and newMail not in mails:
-                        sql = f"INSERT INTO mail (adresse_mail, id_type) VALUES ({newMail}, {idTypes[keyName]});"
-                        print(sql)
-                        mails.append(newMail)
-
-                        cur = connection.cursor()
-                        cursor.execute(sql)
-                        connection.commit()
-                        cur.close()
-
-def main():
-    infosDiploma = fetchData("diploma")
-    print(infosDiploma.length)
-    infosUser = fetchData("profile")
-    print(infosUser.length)
-    connection, cursor = init()
-    types = []
-    
-    #push_type_utilisateur(infosUser, connection, cursor)
-    types = push_type_mail(infosUser, connection, cursor, types)
-    types = push_type_adress(infosUser, connection, cursor, types)
-    push_mail(infosUser, connection, cursor, types)
-    cursor.close()
-    
-if __name__ == "__main__":
-    main()
->>>>>>> fb9c58d (Commit to pull)
+# %%

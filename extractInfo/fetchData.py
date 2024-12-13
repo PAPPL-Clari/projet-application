@@ -10,7 +10,6 @@ def jprint(obj):
     text = json.dumps(obj, sort_keys=True, indent=4)
     print(text)
 
-<<<<<<< HEAD
 async def fetch_page(session, url, semaphore):
     async with semaphore:
         try:
@@ -25,15 +24,6 @@ async def fetch_page(session, url, semaphore):
             return None
 
 async def fetchData_async(type): 
-=======
-def fetchData(type):
-    """
-    args:
-        type: string that defines the type of query. It can be either "diploma" or "profile".
-    return:
-        result: list with all the results from the database server for the query.
-    """
->>>>>>> fb9c58d (Commit to pull)
     # Base URL de la plataforme CNA
     base_url = "https://centraliens-nantes.org"
 
@@ -50,14 +40,7 @@ def fetchData(type):
     ]
 
     result = []
-<<<<<<< HEAD
     semaphore = asyncio.Semaphore(60)  # Limitation de 60 connexions simultanées
-=======
-    
-    for pag in range (1, 258):
-        
-        url = f"{base_url}{query}?access_id={config.key}&access_secret={config.secret}&page={pag}&limit=100"
->>>>>>> fb9c58d (Commit to pull)
 
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_page(session, url, semaphore) for url in urls]
