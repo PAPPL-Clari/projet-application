@@ -294,6 +294,7 @@ def push_adresse(infosUser, connection, cursor):
                 adresses = getAdressesInfo(info["_embedded"]["address"])
 
                 for adresse in adresses:
+                    
                     adresse1 = adresses[adresse]["adresse_1"]
                     adresse2 = adresses[adresse]["adresse_2"]
                     adresse3 = adresses[adresse]["adresse_3"]
@@ -310,10 +311,9 @@ def push_adresse(infosUser, connection, cursor):
                     adresse4 = format_city_name(adresse4)
                     #code_postal = format_code_postal(code_postal)
                     nom_ville = format_city_name(nom_ville)
-                    nom_pays = format(nom_pays)
 
                     nom_pays = "'" + nom_pays + "'"
-                    
+                    #print(adresse1, adresse2, adresse3, adresse4, code_postal, npai, nom_ville, nom_pays)
                     condition = (adresse1 != "''" and adresse1 not in list_adresses) and (adresse2 != "''" and adresse2 not in list_adresses) and (adresse3 != "''" and adresse3 not in list_adresses) and (adresse4 != "''" and adresse4 not in list_adresses) and code_postal != ''
                     
                     if condition:
@@ -323,11 +323,11 @@ def push_adresse(infosUser, connection, cursor):
                         list_adresses.append(adresse4)
                         
                         # Check if the adress already exists
-                        check_sql = f"""
-                        SELECT adresse_1 FROM adresse WHERE adresse_1 = {adresse1};
+                        '''check_sql = f"""
+                        SELECT adresse_id FROM adresse WHERE adresse_1 = {adresse1};
                         """
                         cursor.execute(check_sql)
-                        result_adress = cursor.fetchone()
+                        result_adress = cursor.fetchone()'''
 
                         #Check if the city exists
                         check_sql = f"""
@@ -343,18 +343,63 @@ def push_adresse(infosUser, connection, cursor):
                         cursor.execute(check_sql)
                         result_type = cursor.fetchone()
 
-                        if not result_adress and result_city:  # Insert only if it does not exist
+                        #print(result_adress, result_city, result_type)
+
+                        if result_city != None and result_type != None:  # Insert only if it does not exist
                             result_city = result_city[0]
                             result_type = result_type[0]
-                            adresse = format(adresse)
+                            type_adresse = format(adresse)
                             sql = f"""
                             INSERT INTO adresse (adresse_1, adresse_2, adresse_3, adresse_4, id_ville, npai, code_postal, type_adresse, id_type)
-                            VALUES ({adresse1}, {adresse2}, {adresse3}, {adresse4}, {result_city}, {npai}, {code_postal}, {adresse}, {result_type});
+                            VALUES ({adresse1}, {adresse2}, {adresse3}, {adresse4}, {result_city}, {npai}, {code_postal}, {type_adresse}, {result_type});
                             """
+                            #print(sql)
                             cursor.execute(sql)
                             connection.commit()
-    print("Succès à l'ajout des villes à la base de données.")
+    print("Succès à l'ajout des adresses à la base de données.")
     return adresses
+
+#Add school data to table ecole
+def push_ecoles(infosDiploma, connection, cursor):
+    print("Ajout des écoles à la base de données...")
+    ecoles = []
+
+    for info in infosDiploma: 
+        if '_embedded' in info and 'diplomas' in info["_embedded"]:
+            DiplomaInfo = getDiplomaInfo(info)
+
+            # Prepare school name and country's acronymn
+            nom_ecole = DiplomaInfo[0]["nom_ecole"]
+            acronyme_pays = DiplomaInfo[0]["acronyme_pays_ecole"]
+
+            nom_ecole = format_city_name(nom_ecole)
+            acronyme_pays = format(acronyme_pays)
+
+            if nom_ecole != "''" and nom_ecole not in ecoles:
+                # Check if the school already exists
+                check_sql = f"""
+                SELECT id_ecole FROM ecole WHERE nom_ecole = {nom_ecole};
+                """
+                cursor.execute(check_sql)
+                result = cursor.fetchone()
+
+                # Check if the country already exists
+                check_sql = f"""
+                SELECT nom_pays FROM pays WHERE acronyme_pays = {acronyme_pays};
+                """
+                cursor.execute(check_sql)
+                result_pays = cursor.fetchone()
+
+                if not result and result_pays:  # Insert only if it does not exist
+                    sql = f"""
+                            INSERT INTO ecole (nom_ecole, acronyme_pays)
+                            VALUES ({nom_ecole}, {acronyme_pays});
+                            """
+                    cursor.execute(sql)
+                    connection.commit()
+
+                    ecoles.append(nom_ecole)
+    print("Succès à l'ajout des ecoles à la base de données.")
 
 #%% Charge data from API
 import nest_asyncio
@@ -383,6 +428,7 @@ types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
 villes = push_ville(infosUser, connection, cursor)
 adresses= push_adresse(infosUser, connection, cursor)
+push_ecoles(infosDiploma, connection, cursor)
 cursor.close()
 
 end_time = datetime.now()
