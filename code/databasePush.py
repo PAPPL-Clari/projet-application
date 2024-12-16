@@ -548,14 +548,50 @@ def push_personne(infosUser, connection, cursor):
     """
     print("Ajout des personnes à la base de données...")
     for info in infosUser: 
-        if '_embedded' in info and 'civil' in info["_embedded"]:
+        if '_embedded' in info and 'civil' in info["_embedded"] and 'type' in info["_embedded"] and 'address' in info["_embedded"]:
             personneInfo = getPersonneInfo(info)
+            
             user_id = personneInfo["id_personne"]
+
+            # Checks if person already exists
             check_sql = f"""
             SELECT id_personne FROM personne WHERE id_personne = {user_id};
             """
             cursor.execute(check_sql)
             personne = cursor.fetchone()
+
+            # Check if the country already exists
+            check_sql = f"""
+            SELECT acronyme_pays FROM pays WHERE UPPER(nom_pays) = UPPER('{personneInfo["nationalite"]}');
+            """
+            cursor.execute(check_sql)
+            result_pays = cursor.fetchone()
+
+            # Check if the city already exists
+            check_sql = f"""
+            SELECT id_ville FROM ville WHERE nom_ville = '{personneInfo["ville"]}';
+            """
+            cursor.execute(check_sql)
+            result_ville = cursor.fetchone()
+
+            # Check the id_type_utilisateur
+            check_sql = f"""
+            SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = '{personneInfo["nom_type_utilisateur"]}';
+            """
+            cursor.execute(check_sql)
+            result_type = cursor.fetchone()
+            print(user_id)
+            if not personne and result_pays and result_ville and result_type:  # Insert only if it does not exist
+                    sql = f"""
+                            INSERT INTO personne (id_personne, prenom, nom, nom_usage, date_naissance, ref_school, civilite, id_ville, adresse_mail, id_type_utilisateur, acronyme_pays, genre)
+                            VALUES ({personneInfo['id_personne']}, '{personneInfo['prenom']}', '{personneInfo['nom']}', '{personneInfo['nomUsage']}', '{personneInfo['dateNaissance']}', '{personneInfo['school_ref']}', '{personneInfo['civilite']}', {result_ville}, '{personneInfo['mail']}', {result_type}, {result_pays}, '{personneInfo['genre']}');
+                            """
+                    cursor.execute(sql)
+                    connection.commit()
+
+    print("Succès à l'ajout des personnes à la base de données.")
+                    
+            
 
 #Add diplome data to table diplome
 def push_diplome(infosDiploma, connection, cursor):
@@ -651,19 +687,20 @@ connection, cursor = init()
 # Starts timer
 start_time = datetime.now()
 
-# Populates tpecialisation and type_utilisateur tables 
+'''# Populates tpecialisation and type_utilisateur tables 
 push_specialisation(infosDiploma, connection, cursor)
 push_type_utilisateur(infosUser, connection, cursor)
 
 # Populates type and mail tables (this must be done in this order)
-types = []
+'''
+'''types = []
 types = push_type_mail(infosUser, connection, cursor, types)
 types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
 
-# Populates ville, adresse, ecole and diplome tables
-push_ville(infosUser, connection, cursor)
-# put push_personne here
+# Populates ville, personne, adresse, ecole and diplome tables
+push_ville(infosUser, connection, cursor)'''
+push_personne(infosUser, connection, cursor)
 push_adresse(infosUser, connection, cursor)
 push_ecoles(infosDiploma, connection, cursor)
 push_diplome(infosDiploma, connection, cursor)
@@ -674,5 +711,6 @@ cursor.close()
 # Mesures time needed to insert data into the database
 end_time = datetime.now()
 print('Durée de la mise à jour de la base de donnees: {}'.format(end_time - start_time))
+
 
 # %%

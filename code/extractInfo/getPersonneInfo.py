@@ -5,7 +5,10 @@ def getPersonneInfo(result):
     
     #Personne_id, school_ref
     id_util = result["id"]
-    school_ref = result["school_ref"]
+
+    school_ref = ""
+    if "school_ref" in result:
+        school_ref = result["school_ref"]
 
     # Civilité	
     civil = result["_embedded"]["civil"]["_embedded"]["civility"]["name"]
@@ -19,26 +22,38 @@ def getPersonneInfo(result):
     if ( nomUsage == "lastname"):
         nomUsage = nom
         
-    # Nom d'état-civil	
-    nomNaissance = result["_embedded"]["civil"]["birthname"]
-
-    # Date de naissance (jj/mm/aaaa)	
-    dateNaissance = result["_embedded"]["civil"]["birthdate"]
+    # Date de naissance (aaaa-mm-dd)	
+    dateNaissance = ""
+    if "birthdate" in result["_embedded"]["civil"]:
+        dateNaissance = result["_embedded"]["civil"]["birthdate"]
 
     # Nationalité (nom du pays)
-    nationalite = result["_embedded"]["civil"]["_embedded"]["nationality"]["name"]
+    nationalite = ""
+    if "nationality" in result["_embedded"]["civil"]:
+        nationalite = result["_embedded"]["civil"]["_embedded"]["nationality"]["name"] # Country name, not acronym
 
-    # Genre  -- NAO TEM NA DATABASE!! TERIA QUE ADICIONAR 
-    gender = result["_embedded"]["civil"]["gender"]
-    if ( gender == "0"):
-        gender = "masculin"
+    # Genre 
+    genre = result["_embedded"]["civil"]["gender"]
+    if ( genre == "0"):
+        genre = "masculin"
     else: 
-        gender = "feminin" 
-                
+        genre = "feminin" 
+
+    # Ville 
+    ville = result["_embedded"]["address"][0]["city"]   
+    
+    # Type d'utilisateur
+    nom_type_utilisateur = result["_embedded"]["type"]["name"]
+
+    # Email
+    if "username" in result:
+        mail = result["username"]
+    else:
+        mail = result["_embedded"]["emails"][0]["address"]
 
     infosPersonnelles.update( id_personne = id_util, school_ref = school_ref, civilite = civil, prenom = prenom,
-                             nom = nom, nomUsage = nomUsage, nomNaissance = nomNaissance, dateNaissance = dateNaissance,
-                             nationalite = nationalite, gender = gender
+                             nom = nom, nomUsage = nomUsage, dateNaissance = dateNaissance,
+                             nationalite = nationalite, genre = genre, ville = ville, nom_type_utilisateur = nom_type_utilisateur, mail = mail
                             )
     
     return infosPersonnelles

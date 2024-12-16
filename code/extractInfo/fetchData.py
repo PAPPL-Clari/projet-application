@@ -40,7 +40,7 @@ async def fetchData_async(type):
     ]
 
     result = []
-    semaphore = asyncio.Semaphore(40)  # Limitation de 60 connexions simultanées
+    semaphore = asyncio.Semaphore(60)  # Limitation de 60 connexions simultanées
 
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_page(session, url, semaphore) for url in urls]
