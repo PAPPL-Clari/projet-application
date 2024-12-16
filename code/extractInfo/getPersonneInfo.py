@@ -45,7 +45,7 @@ def getPersonneInfo(result):
     # Type d'utilisateur
     nom_type_utilisateur = result["_embedded"]["type"]["name"]
 
-    # Email
+    # Email -- not everyone has one, fix this
     if "username" in result:
         mail = result["username"]
     else:

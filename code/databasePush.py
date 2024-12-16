@@ -562,21 +562,21 @@ def push_personne(infosUser, connection, cursor):
 
             # Check if the country already exists
             check_sql = f"""
-            SELECT acronyme_pays FROM pays WHERE UPPER(nom_pays) = UPPER('{personneInfo["nationalite"]}');
+            SELECT acronyme_pays FROM pays WHERE UPPER(nom_pays) = UPPER({format(personneInfo["nationalite"])});
             """
             cursor.execute(check_sql)
             result_pays = cursor.fetchone()
 
             # Check if the city already exists
             check_sql = f"""
-            SELECT id_ville FROM ville WHERE nom_ville = '{personneInfo["ville"]}';
+            SELECT id_ville FROM ville WHERE nom_ville = {format(personneInfo["ville"])};
             """
             cursor.execute(check_sql)
             result_ville = cursor.fetchone()
 
             # Check the id_type_utilisateur
             check_sql = f"""
-            SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = '{personneInfo["nom_type_utilisateur"]}';
+            SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = {format(personneInfo["nom_type_utilisateur"])};
             """
             cursor.execute(check_sql)
             result_type = cursor.fetchone()
