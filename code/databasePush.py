@@ -535,6 +535,29 @@ def push_ecoles(infosDiploma, connection, cursor):
                     ecoles.append(nom_ecole)
     print("Succès à l'ajout des ecoles à la base de données.")
 
+
+def push_personne(infosUser, connection, cursor):
+    """
+    Insert all users in the table personne.
+    Verifies duplicity of data and add if the person doesn't exist.
+    If the person already exists, updates the data.
+
+    :param infosUser: List of all infos of Users in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    """
+    print("Ajout des personnes à la base de données...")
+    for user in infosUser:
+        user_infos = user["_embedded"]["civil"]
+        user_id = int(user_infos["id"])
+        user_prenom = user_infos["firstname"]
+        nom = user_infos["lastname"]
+        nomUsage = user_infos["name_used"]
+        if ( nomUsage == "lastname"):
+            nomUsage = nom
+        birthdate = user_infos["birthdate"]
+
+
 #Add diplome data to table diplome
 def push_diplome(infosDiploma, connection, cursor):
     """
