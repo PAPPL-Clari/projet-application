@@ -76,6 +76,7 @@ CREATE TABLE public.personne (
     civilite VARCHAR(64),
     id_ville_naissance INTEGER NOT NULL,
     adresse_mail VARCHAR(128) NOT NULL,
+    gender VARCHAR(128) NOT NULL,
     id_type_utilisateur INTEGER NOT NULL,
     acronyme_pays VARCHAR(128) NOT NULL,
     CONSTRAINT personne_pk PRIMARY KEY (id_personne),
