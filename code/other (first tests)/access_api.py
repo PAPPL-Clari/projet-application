@@ -29,7 +29,7 @@ query = "/api/v2/customer/profile/people"
         resultat = response.json() 
         jprint(result)
         print("Ok")
-        '''
+        
         # ID de l'utilisateur (ID school, ID étudiant...)	
         for i in range (len(resultat["_embedded"]["items"])):
             result = resultat["_embedded"]["items"][i]

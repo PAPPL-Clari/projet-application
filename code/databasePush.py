@@ -547,16 +547,15 @@ def push_personne(infosUser, connection, cursor):
     :param cursor: Cursor object of connection to the database
     """
     print("Ajout des personnes à la base de données...")
-    for user in infosUser:
-        user_infos = user["_embedded"]["civil"]
-        user_id = int(user_infos["id"])
-        user_prenom = user_infos["firstname"]
-        nom = user_infos["lastname"]
-        nomUsage = user_infos["name_used"]
-        if ( nomUsage == "lastname"):
-            nomUsage = nom
-        birthdate = user_infos["birthdate"]
-
+    for info in infosUser: 
+        if '_embedded' in info and 'civil' in info["_embedded"]:
+            personneInfo = getPersonneInfo(info)
+            user_id = personneInfo["id_personne"]
+            check_sql = f"""
+            SELECT id_personne FROM personne WHERE id_personne = {user_id};
+            """
+            cursor.execute(check_sql)
+            personne = cursor.fetchone()
 
 #Add diplome data to table diplome
 def push_diplome(infosDiploma, connection, cursor):
