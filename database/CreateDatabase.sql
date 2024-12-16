@@ -112,7 +112,7 @@ CREATE TABLE public.personne (
                 adresse_mail VARCHAR(128) NOT NULL,
                 id_type_utilisateur INTEGER NOT NULL,
                 acronyme_pays VARCHAR(128) NOT NULL,
-                CONSTRAINT personne_pk PRIMARY KEY (id_personne, prenom, nom)
+                CONSTRAINT personne_pk PRIMARY KEY (id_personne)
 );
 
 
