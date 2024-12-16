@@ -1,7 +1,6 @@
 #%%
 import asyncio
-import psycopg2
-import config as config
+import config
 from unidecode import unidecode
 import json
 from extractInfo.fetchData import fetchData_async
@@ -11,6 +10,7 @@ from extractInfo.getMailsInfo import getMailsInfo
 from extractInfo.getAdressesInfo import getAdressesInfo
 from extractInfo.getPersonneInfo import getPersonneInfo
 from datetime import datetime
+import psycopg2
 
 def jprint(obj):
     """
@@ -400,7 +400,6 @@ def push_adresse(infosUser, connection, cursor):
     :return list_adresses: array list of all adresses saved in the database (adress 1 to 4)
     """
     print("Ajout des adresses à la base de données...")
-    list_adresses = []
 
     for info in infosUser: 
         if '_embedded' in info:
@@ -428,49 +427,63 @@ def push_adresse(infosUser, connection, cursor):
                     nom_ville = format_name(nom_ville)
                     code_postal = format_code_postal(code_postal)
 
+                    user_id = int(info["id"])
+
                     nom_pays = "'" + nom_pays + "'"
 
-                    if adresse1 != "''" and adresse1 not in list_adresses:
+                    if adresse1 != "''":
                         # Check if the main adress already exists
                         check_sql = f"""
-                        SELECT adresse_id FROM adresse WHERE adresse_1 = {adresse1};
+                        SELECT adresse_id FROM adresse WHERE id_personne = {user_id};
                         """
                         cursor.execute(check_sql)
                         result_adress1 = cursor.fetchone()
                         
-                        #L'adresse n'existe pas
-                        if not result_adress1 and code_postal != '': 
-                            list_adresses.append(adresse1)
-                            list_adresses.append(adresse2)
-                            list_adresses.append(adresse3)
-                            list_adresses.append(adresse4)
+                        #Check if the city exists
+                        check_sql = f"""
+                        SELECT id_ville FROM ville WHERE nom_ville = {nom_ville};
+                        """
+                        cursor.execute(check_sql)
+                        result_city = cursor.fetchone()
 
-                            #Check if the city exists
-                            check_sql = f"""
-                            SELECT id_ville FROM ville WHERE nom_ville = {nom_ville};
-                            """
-                            cursor.execute(check_sql)
-                            result_city = cursor.fetchone()
+                        #Check if the type exists
+                        check_sql = f"""
+                        SELECT id_type FROM type WHERE nom_type = {type};
+                        """
+                        cursor.execute(check_sql)
+                        result_type = cursor.fetchone()
+                    
+                        if result_city and result_type:
+                            result_city = result_city[0]
+                            result_type = result_type[0]
+                            type_adresse = format(adresse)
 
-                            #Check if the type exists
-                            check_sql = f"""
-                            SELECT id_type FROM type WHERE nom_type = {type};
-                            """
-                            cursor.execute(check_sql)
-                            result_type = cursor.fetchone()
-
-                            if result_city != None and result_type != None:  # Insert only if it does not exist
-                                result_city = result_city[0]
-                                result_type = result_type[0]
-                                type_adresse = format(adresse)
+                            if not result_adress1 and code_postal != '':
+                                # Insert new address if it does not exist
                                 sql = f"""
-                                INSERT INTO adresse (adresse_1, adresse_2, adresse_3, adresse_4, id_ville, npai, code_postal, type_adresse, id_type)
-                                VALUES ({adresse1}, {adresse2}, {adresse3}, {adresse4}, {result_city}, {npai}, {code_postal}, {type_adresse}, {result_type});
+                                INSERT INTO adresse (adresse_1, adresse_2, adresse_3, adresse_4, id_ville, npai, code_postal, type_adresse, id_type, id_personne)
+                                VALUES ({adresse1}, {adresse2}, {adresse3}, {adresse4}, {result_city}, {npai}, {code_postal}, {type_adresse}, {result_type}, {user_id});
                                 """
                                 cursor.execute(sql)
-                                connection.commit()
+                            else:
+                                # Update existing address if it exists
+                                sql = f"""
+                                UPDATE adresse
+                                SET adresse_1 = {adresse1}, 
+                                    adresse_2 = {adresse2}, 
+                                    adresse_3 = {adresse3}, 
+                                    adresse_4 = {adresse4}, 
+                                    id_ville = {result_city}, 
+                                    npai = {npai}, 
+                                    code_postal = {code_postal}, 
+                                    type_adresse = {type_adresse}, 
+                                    id_type = {result_type}
+                                WHERE id_personne = {user_id};
+                                """
+                                cursor.execute(sql)
+
+                            connection.commit()
     print("Succès à l'ajout des adresses à la base de données.")
-    return list_adresses
 
 #Add school data to table ecole
 def push_ecoles(infosDiploma, connection, cursor):
@@ -592,38 +605,52 @@ def push_diplome(infosDiploma, connection, cursor):
     print("Succès à l'ajout des diplomes à la base de données.")
 
 #%% Charge data from API
+
+# Enables async calls to API requests
 import nest_asyncio
 nest_asyncio.apply()
+
+# Starts timer
 start_time = datetime.now()
 
+# Charges needed data from API
 infosDiploma = asyncio.run(fetchData_async("diploma"))
 infosUser = asyncio.run(fetchData_async("profile"))
 
+# Informs total duration of data gathering
 end_time = datetime.now()
-print('Duration recuperation de donnees de l''API: {}'.format(end_time - start_time))
+print("Duration recuperation de donnees de l'API: {}".format(end_time - start_time))
 
 #%% Push data in database
 
+# Establishes connection with database
 connection, cursor = init()
-types = []
-villes = []
-adresses = []
 
+# Starts timer
 start_time = datetime.now()
 
+# Populates tpecialisation and type_utilisateur tables 
 push_specialisation(infosDiploma, connection, cursor)
 push_type_utilisateur(infosUser, connection, cursor)
+
+# Populates type and mail tables (this must be done in this order)
+types = []
 types = push_type_mail(infosUser, connection, cursor, types)
 types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
-villes = push_ville(infosUser, connection, cursor)
-adresses= push_adresse(infosUser, connection, cursor)
+
+# Populates ville, adresse, ecole and diplome tables
+push_ville(infosUser, connection, cursor)
+# put push_personne here
+push_adresse(infosUser, connection, cursor)
 push_ecoles(infosDiploma, connection, cursor)
 push_diplome(infosDiploma, connection, cursor)
+
+# Ends connection with database
 cursor.close()
 
+# Mesures time needed to insert data into the database
 end_time = datetime.now()
 print('Durée de la mise à jour de la base de donnees: {}'.format(end_time - start_time))
-
 
 # %%
