@@ -2,7 +2,7 @@
 #return: dictionary avec les infos de prenom, nom, nom d'usage, id, 
 # school_ref, dateNaissance, nationalite, genre, ville, 
 # type d'utilisateur et mail
-from .format import format_str
+from extractInfo.format import format_str
 
 def getPersonneInfo(result):
     infosPersonnelles = dict()
