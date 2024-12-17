@@ -3,24 +3,25 @@ from unidecode import unidecode
 
 def jprint(obj):
     """
-    Print JSON objet with identation.
+    Affiche un objet JSON avec indentation.
 
-    :param obj: A string in format JSON
-    :return: returns nothing
+    :param obj: Une chaîne au format JSON
+    :return: fichier json transformé en chaine de charactères
     """
 
     text = json.dumps(obj, sort_keys=True, indent=4)
     print(text)
+    return text
 
 def format_name(city_name):
     """
-    Format names in order to normalise data.
-    Removes special characters, hifens and substitues single '' to double,
-    Put every first character of a word with majuscule and the other minuscule.
-    Ex: SUCE-SUR-ERDRE turns to Suce Sur Erdre
+    Formate les noms afin de normaliser les données.
+    Supprime les caractères spéciaux, les tirets et remplace les simples guillemets '' par des doubles.
+    Met chaque première lettre d'un mot en majuscule et les autres en minuscule.
+    Ex : SUCE-SUR-ERDRE devient Suce Sur Erdre
 
-    :param name: A string
-    :return: normalized_name: String 
+    :param city_name: Une chaîne de caractères
+    :return: normalized_name: Chaîne de caractères normalisée
     """
     city_name = unidecode(city_name)
     city_name = city_name.lower()
@@ -34,23 +35,23 @@ def format_name(city_name):
 
 def format_adress(adress):
     """
-    Format adress names in order to fit in 128 characters.
-    :param adress: A string
-    :return: adress: String with 128 characters
-
+    Formate les adresses afin de s'adapter à 128 caractères.
+    
+    :param adress: Une chaîne de caractères
+    :return: adress: Chaîne de caractères limitée à 128 caractères
     """
     adress = format_name(adress)
-    if (len(adress)> 127):
-        adress = adress[:128]+ "'"
+    if (len(adress) > 127):
+        adress = adress[:128] + "'"
     return adress
 
 def format_code_postal(code):
     """
-    Format zip code in order to normalise data.
-    Verifies if its an integer, if not, defines it as zero.
+    Formate le code postal afin de normaliser les données.
+    Vérifie s'il s'agit d'un entier, sinon il le définit à zéro.
 
-    :param name: A zip code, string format
-    :return: modified code 
+    :param code: Un code postal au format chaîne de caractères
+    :return: code modifié
     """
     try:
         code = int(code[0:5])
@@ -62,13 +63,13 @@ def format_code_postal(code):
 
 def format_str(str):
     """
-    Format a string in order to avoid SQL query errors.
-    Remove special characters, replace single quotes to double ' -> ''
-    and puts an initial ' in the beginning and end of the string.
-    Ex: Côte d'Ivoire -> 'Cote d''Ivoire'
+    Formate une chaîne afin d'éviter les erreurs dans les requêtes SQL.
+    Supprime les caractères spéciaux, remplace les guillemets simples par des doubles ' -> ''
+    et ajoute un guillemet initial et final à la chaîne.
+    Ex : Côte d'Ivoire -> 'Cote d''Ivoire'
 
-    :param str: A string
-    :return: str: Modified string 
+    :param str: Une chaîne de caractères
+    :return: str: Chaîne modifiée
     """
     str = unidecode(str)
     str = str.replace("'", "''")

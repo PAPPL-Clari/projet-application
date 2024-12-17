@@ -13,12 +13,8 @@ def getDiplomaInfo(result):
         nom_diplome = listeDiplomes[i]["full_name"]
         parcours = listeDiplomes[i]["concentration"]
 
-        #infos specialisation
-        #id_specialisation =
         nom_specialisation = listeDiplomes[i]["specialization"]
 
-        #Infos de l'ecole
-        #id_ecole
         nom_ecole = listeDiplomes[i]["school"]
         
         if "study_year" in  listeDiplomes[i]:
