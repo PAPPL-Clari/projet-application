@@ -544,56 +544,122 @@ def push_diplome(infosDiploma, connection, cursor):
         if '_embedded' in info and 'diplomas' in info["_embedded"]:
             DiplomaInfo = getDiplomaInfo(info)
 
-            # Prepare school name and country's acronymn
-            id_diplome = DiplomaInfo[0]["id_diplome"]
-            ref_diploma = DiplomaInfo[0]["ref_diplome"]
-            nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
-            nom_ecole = DiplomaInfo[0]["nom_ecole"]
-            nom_diplome = DiplomaInfo[0]["nom_diplome"] 
-            parcours = DiplomaInfo[0]["parcours"]
+            for i in range (len(DiplomaInfo)):
+                # Prepare school name and country's acronymn
+                id_diplome = DiplomaInfo[i]["id_diplome"]
+                ref_diploma = DiplomaInfo[i]["ref_diplome"]
+                nom_specialisation = DiplomaInfo[i]["nom_specialisation"]
+                nom_ecole = DiplomaInfo[i]["nom_ecole"]
+                nom_diplome = DiplomaInfo[i]["nom_diplome"] 
+                parcours = DiplomaInfo[i]["parcours"]
 
-            ref_diploma = format_str(ref_diploma)
-            nom_ecole = format_name(nom_ecole)
-            nom_diplome = format_name(nom_diplome)
-            parcours = format_name(parcours)
+                ref_diploma = format_str(ref_diploma)
+                nom_ecole = format_name(nom_ecole)
+                nom_diplome = format_name(nom_diplome)
+                parcours = format_name(parcours)
 
-            nom_specialisation = format_str(nom_specialisation)
+                nom_specialisation = format_str(nom_specialisation)
 
-            if nom_diplome != "''" and nom_diplome not in diplomes:
-                # Check if the diplome already exists
+                if nom_diplome != "''":
+                    # Check if the diplome already exists
+                    check_sql = f"""
+                    SELECT id_diplome FROM diplome WHERE nom_diplome = {nom_diplome};
+                    """
+                    cursor.execute(check_sql)
+                    result = cursor.fetchone()
+
+                    # Search id for specialisation
+                    check_sql = f"""
+                    SELECT id_specialisation FROM specialisation WHERE nom_specialisation = {nom_specialisation};
+                    """
+                    cursor.execute(check_sql)
+                    result_spec = cursor.fetchone()
+
+                    #Search id for school
+                    check_sql = f"""
+                    SELECT id_ecole FROM ecole WHERE nom_ecole = {nom_ecole};
+                    """
+                    cursor.execute(check_sql)
+                    result_ecole = cursor.fetchone()
+
+                    if not result and result_spec and result_ecole:  # Insert only if it does not exist
+                        id_specialisation = result_spec[0]
+                        id_ecole = result_ecole[0]
+                        sql = f"""
+                                INSERT INTO diplome (id_diplome, ref_diploma, id_specialisation, id_ecole, 
+                                                    nom_diplome, parcours)
+                                VALUES ({id_diplome}, {ref_diploma}, {id_specialisation}, {id_ecole}, {nom_diplome}, {parcours});
+                                """
+                        cursor.execute(sql)
+                        connection.commit()
+
+                        diplomes.append(nom_diplome)
+    print("Succès à l'ajout des diplomes à la base de données.")
+
+def push_a_un_diplome(infosDiploma, connection, cursor):
+    """
+    Links the table diplome to the table personne via the table a_un_diplome.
+    Verifies duplicity of data and add if the diplome doesn't exist.
+
+    :param infosDiploma: List of all infos of Diplomas in the API
+    :param connection: Connection object to the database
+    :param cursor: Cursor object of connection to the database
+    """
+    print("Ajout des donnèes a_un_diplome à la base de données...")
+
+    for info in infosDiploma: 
+        if '_embedded' in info and 'diplomas' in info["_embedded"]:
+            DiplomaInfo = getDiplomaInfo(info)
+            id_personne = info["id"]
+
+            for i in range (len(DiplomaInfo)):
+                # Prepare school name and country's acronymn
+                id_diplome = DiplomaInfo[i]["id_diplome"]
+                est_diplome = DiplomaInfo[i]["estDiplome"]
+                dateDiplomation = DiplomaInfo[i]["dateDiplomation"]
+                dateIntegration = DiplomaInfo[i]["dateIntegration"]
+
+                # Check if the data already exists
                 check_sql = f"""
-                SELECT id_diplome FROM diplome WHERE nom_diplome = {nom_diplome};
+                SELECT id_diplome FROM a_un_diplome WHERE id_diplome = {id_diplome} AND id_personne = {id_personne};
                 """
                 cursor.execute(check_sql)
                 result = cursor.fetchone()
 
-                # Search id for specialisation
+                # Check if the person exists
                 check_sql = f"""
-                SELECT id_specialisation FROM specialisation WHERE nom_specialisation = {nom_specialisation};
+                SELECT id_personne FROM personne WHERE id_personne = {id_personne};
                 """
                 cursor.execute(check_sql)
-                result_spec = cursor.fetchone()
+                result_personne = cursor.fetchone()
 
-                #Search id for school
+                # Check if the diplome exists
                 check_sql = f"""
-                SELECT id_ecole FROM ecole WHERE nom_ecole = {nom_ecole};
+                SELECT id_diplome FROM diplome WHERE id_diplome = {id_diplome};
                 """
                 cursor.execute(check_sql)
-                result_ecole = cursor.fetchone()
+                result_diplome = cursor.fetchone()
 
-                if not result and result_spec and result_ecole:  # Insert only if it does not exist
-                    id_specialisation = result_spec[0]
-                    id_ecole = result_ecole[0]
+                if not result and result_diplome and result_personne:  # Insert only if it does not exist and if the data is valid          
+                    if dateDiplomation != '':
+                        dateDiplomation = format_str(dateDiplomation)
+                    else:
+                        dateDiplomation = 'NULL'
+
+                    if dateIntegration != '':
+                        dateIntegration = format_str(dateIntegration)
+                    else:
+                        dateIntegration = 'NULL'
+                    
                     sql = f"""
-                            INSERT INTO diplome (id_diplome, ref_diploma, id_specialisation, id_ecole, 
-                                                 nom_diplome, parcours)
-                            VALUES ({id_diplome}, {ref_diploma}, {id_specialisation}, {id_ecole}, {nom_diplome}, {parcours});
+                            INSERT INTO a_un_diplome (id_diplome, id_personne, date_diplomation, date_integration, est_diplome)
+                            VALUES ({id_diplome}, {id_personne}, {dateDiplomation}, {dateIntegration}, {est_diplome});
                             """
                     cursor.execute(sql)
                     connection.commit()
 
-                    diplomes.append(nom_diplome)
-    print("Succès à l'ajout des diplomes à la base de données.")
+    print("Succès à l'ajout des liens diplomes/personnes à la base de données.")
+
 
 #%% Charge data from API
 
@@ -630,12 +696,13 @@ types = push_type_mail(infosUser, connection, cursor, types)
 types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
 
-# Populates ville, personne, adresse, ecole and diplome tables
+# Populates ville, personne, adresse, ecole, diplome and a_un_diplome tables
 push_ville(infosUser, connection, cursor)
 push_personne(infosUser, connection, cursor)
 push_adresse(infosUser, connection, cursor)
 push_ecoles(infosDiploma, connection, cursor)
 push_diplome(infosDiploma, connection, cursor)
+push_a_un_diplome(infosDiploma, connection, cursor)
 
 # Ends connection with database
 cursor.close()
