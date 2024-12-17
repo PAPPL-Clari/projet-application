@@ -15,31 +15,31 @@ from extractInfo.format import format_str, format_name, format_adress, format_co
 
 def init():
     """
-    Open a new connection with the local database.
+    Ouvre une nouvelle connexion avec la base de données locale.
 
-    :param: None
-    :return: connection: a connection objet to the database
-    :return: cursor: cursor of the connexion
+    :param : None
+    :return : connection : un objet de connexion à la base de données
+    :return : cursor : curseur de la connexion
     """
     print("Établissement de la connexion à la base de données...")
     connection = psycopg2.connect(database=config.database,
                                 user= config.login,
                                 password=config.password,
                                 host="localhost", port=5432)
-    cursor = connection.cursor() # Open a cursor to perform database operations
+    cursor = connection.cursor() # Ouvrir un curseur pour effectuer des opérations sur la base de données
     print("Connexion à la base de données établi.")
 
     return connection, cursor
 
-# Adds data to the table "specialisation"
+# Ajoute des données à la table « specialisation »
 def push_specialisation(infosDiploma, connection, cursor):
     """
-    Insert all specialisations in the table specialisation.
-    Verifies duplicity of data and add if the specialisation doesn't exist.
+    Insère toutes les spécialisations dans la table « spécialisation ».
+    Vérifie la duplicité des données et ajoute si la spécialisation n'existe pas.
 
-    :param infosDiploma: List of all infos of Diploma in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
+    :param infosDiplôme : Liste de toutes les informations relatives aux diplômes dans l'API
+    :param connection : Objet de connexion à la base de données
+    :param cursor : Objet curseur de la connexion à la base de données
     """
     print("Ajout des specialisations à la base de données...")
     specialisations = []
@@ -48,20 +48,20 @@ def push_specialisation(infosDiploma, connection, cursor):
         if '_embedded' in info and 'diplomas' in info["_embedded"]:
             DiplomaInfo = getDiplomaInfo(info)
 
-            # Prepare specialization name
+            # Prepare le nom de la specialisation 
             nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
             nom_specialisation = nom_specialisation.replace("'", "''")  # Escape single quotes
             nom_specialisation = "'" + nom_specialisation + "'"
 
             if nom_specialisation != "''" and nom_specialisation not in specialisations:
-                # Check if the specialization already exists
+                # Vérifier si la spécialisation existe déjà
                 check_sql = f"""
                 SELECT id_specialisation FROM specialisation WHERE nom_specialisation = {nom_specialisation};
                 """
                 cursor.execute(check_sql)
                 result = cursor.fetchone()
 
-                if not result:  # Insert only if it does not exist
+                if not result:  # Insérer uniquement s'il n'existe pas
                     insert_sql = f"""
                     INSERT INTO specialisation (nom_specialisation)
                     VALUES ({nom_specialisation});
@@ -72,15 +72,15 @@ def push_specialisation(infosDiploma, connection, cursor):
                 specialisations.append(nom_specialisation)
     print("Succès à l'ajout des specialisations à la base de données.")
 
-# Adds data to the table "type_utilisateur"
+# Ajoute des données à la table « type_utilisateur »
 def push_type_utilisateur(infosUser, connection, cursor):
     """
-    Insert all type of users in the table type_utilisateur.
-    Verifies duplicity of data and add if the type doesn't exist.
+    Insérer tous les types d'utilisateurs dans la table type_utilisateur.
+    Vérifie la duplicité des données et ajoute si le type n'existe pas.
 
-    :param infosUser: List of all infos of Users in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
+    param infosUser : Liste de toutes les infos des utilisateurs dans l'API
+    :param connection : Objet de connexion à la base de données
+    :param cursor : Objet curseur de la connexion à la base de données
     """
     print("Ajout des types d'utilisateur à la base de données...")
     type_utilisateurs = []
@@ -88,21 +88,21 @@ def push_type_utilisateur(infosUser, connection, cursor):
     for info in infosUser: 
         if '_embedded' in info:
         
-        #Put type utilisateur info in database
+        # Mettre l'information sur le type d'utilisateur dans la base de données
             if 'type' in info["_embedded"]:
                 nom_type_utilisateur = getUtilisateurInfo(info)
                 nom_type_utilisateur = nom_type_utilisateur.replace("'", "''")
                 nom_type_utilisateur = "'" + nom_type_utilisateur + "'"
 
                 if nom_type_utilisateur != "''" and nom_type_utilisateur not in type_utilisateurs:
-                    # Check if the specialization already exists
+                    # Vérifier si le type existe déjà
                     check_sql = f"""
                     SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = {nom_type_utilisateur};
                     """
                     cursor.execute(check_sql)
                     result = cursor.fetchone()
 
-                    if not result:  # Insert only if it does not exist
+                    if not result:  # Insérer uniquement s'il n'existe pas
                         
                         sql = f"""
                         INSERT INTO type_utilisateur (nom_type_utilisateur)
@@ -112,19 +112,20 @@ def push_type_utilisateur(infosUser, connection, cursor):
                         
                         cursor.execute(sql)
                         connection.commit()
+
     print("Succès à l'ajout des types d'utilisateur à la base de données.")
 
-#Adds data type_mail to table "type"
+# Ajoute les données type_mail à la table « type »
 def push_type_mail(infosUser, connection, cursor, types):
     """
-    Insert all type of emails in the table type.
-    Verifies duplicity of data and add if the type doesn't exist.
+    Insère tous les types d'emails dans la table type.
+    Vérifie la duplicité des données et ajoute si le type n'existe pas.
 
-    :param infosUser: List of all infos of Users in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
-    :param types: array list of types already existing in the database
-    :return types: array list of the types saved in the database
+    param infosUser : Liste de toutes les informations sur les utilisateurs dans l'API
+    :param connection : Objet de connexion à la base de données
+    :param cursor : Objet curseur de la connexion à la base de données
+    :param types : tableau liste des types déjà existants dans la base de données
+    :return types : tableau liste des types sauvegardés dans la base de données
     """
     print("Ajout des types de mail à la base de données...")
     for info in infosUser: 
@@ -139,14 +140,14 @@ def push_type_mail(infosUser, connection, cursor, types):
 
                     if nom != "''" and nom not in types:
                         types.append(nom)
-                        # Check if the specialization already exists
+                        # Vérifier si le type existe déjà
                         check_sql = f"""
                         SELECT id_type FROM type WHERE nom_type = {nom};
                         """
                         cursor.execute(check_sql)
                         result = cursor.fetchone()
 
-                        if not result:  # Insert only if it does not exist
+                        if not result:  # Insérer uniquement s'il n'existe pas
                             sql = f"""
                             INSERT INTO type (nom_type)
                             VALUES ({nom});
@@ -156,17 +157,17 @@ def push_type_mail(infosUser, connection, cursor, types):
     print("Succès à l'ajout des types de mail à la base de données.")
     return types
 
-#Add data type_adress to table "type"
+# Ajouter les données type_adresse à la table « type »
 def push_type_adress(infosUser, connection, cursor, types):
     """
-    Insert all type of adress in the table type.
-    Verifies duplicity of data and add if the type doesn't exist.
+    Insère tous les types d'adresses dans la table type.
+    Vérifie la duplicité des données et ajoute si le type n'existe pas.
 
-    :param infosUser: List of all infos of Users in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
-    :param types: array list of types already existing in the database
-    :return types: array list of the types saved in the database
+    param infosUser : Liste de toutes les informations sur les utilisateurs dans l'API
+    :param connection : Objet de connexion à la base de données
+    :param cursor : Objet curseur de la connexion à la base de données
+    :param types : tableau liste des types déjà existants dans la base de données
+    :return types : tableau liste des types sauvegardés dans la base de données
     """
     print("Ajout des types d'adresse à la base de données...")
     for info in infosUser: 
@@ -181,14 +182,14 @@ def push_type_adress(infosUser, connection, cursor, types):
 
                     if nom != "''" and nom not in types:
                         types.append(nom)
-                        # Check if the specialization already exists
+                        # Vérifier si le type existe déjà
                         check_sql = f"""
                         SELECT id_type FROM type WHERE nom_type = {nom};
                         """
                         cursor.execute(check_sql)
                         result = cursor.fetchone()
 
-                        if not result:  # Insert only if it does not exist
+                        if not result:  # Insérer uniquement s'il n'existe pas
                             sql = f"""
                             INSERT INTO type (nom_type)
                             VALUES ({nom});
@@ -198,22 +199,22 @@ def push_type_adress(infosUser, connection, cursor, types):
     print("Succès à l'ajout des types d'adresse à la base de données.")
     return types
 
-# Add data mail to table mail
+# Ajouter les données mail au tableau mail
 def push_mail(infosUser, connection, cursor, types):
     """
-    Insert all emails adress in the table mail.
-    Verifies duplicity of data and add if the type doesn't exist.
-    Doesn't update data.
+    Insère toutes les adresses électroniques dans la table mail.
+    Vérifie la duplicité des données et ajoute si le type n'existe pas.
+    Ne met pas à jour les données.
 
-    :param infosUser: List of all infos of Users in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
-    :param types: array list of types already existing in the database
+    :param infosUser : Liste de toutes les infos des utilisateurs dans l'API
+    :param connection : Objet de connexion à la base de données
+    :param cursor : Objet curseur de la connexion à la base de données
+    :param types : Liste des types existants dans la base de données
     """
     print("Ajout des données de mail à la base de données...")
     mails = []
 
-    # Recupera todos os tipos de ID
+    # Récupérer tous les types d'id
     idTypes = {}
     for type in types:
         sqlRecup = f"SELECT id_type FROM type WHERE nom_type={type}"
@@ -228,18 +229,18 @@ def push_mail(infosUser, connection, cursor, types):
 
             for keyName in infosMail.keys():
                 newMail = infosMail[keyName].replace("'", "''")  # Escape single quotes
-                newMail = f"'{newMail}'"  # Wrap in quotes
+                newMail = f"'{newMail}'"  # Entre guillemets
                 infosMail[keyName] = newMail
                 keyName = f"'{keyName}'"
 
                 if newMail != "''" and newMail not in mails:
-                    # Verifica se o email já existe
+                    # Vérifier si le mail existe déjà
                     check_sql = f"SELECT adresse_mail FROM mail WHERE adresse_mail = {newMail};"
                     cursor.execute(check_sql)
                     exists = cursor.fetchone()
 
                     if exists:
-                        # Atualiza id_type se o email já existir
+                        # Met à jour l'id_type si l'email existe déjà
                         update_sql = f"""
                         UPDATE mail
                         SET id_type = {idTypes[keyName]}
@@ -247,7 +248,7 @@ def push_mail(infosUser, connection, cursor, types):
                         """
                         cursor.execute(update_sql)
                     else:
-                        # Insere novo email
+                        # Insérer le nouvel e-mail
                         insert_sql = f"""
                         INSERT INTO mail (adresse_mail, id_type)
                         VALUES ({newMail}, {idTypes[keyName]});
@@ -259,16 +260,16 @@ def push_mail(infosUser, connection, cursor, types):
     print("Succès à l'ajout des mails à la base de données.")
     connection.commit()
 
-# Add city data to table ville
+# Ajouter les données de la ville au tableau ville
 def push_ville(infosUser, connection, cursor):
     """
-    Insert all cities present in the API in the table ville.
-    Verifies duplicity of data and add if the city doesn't exist.
+    Insère toutes les villes présentes dans l'API dans la table ville.
+    Vérifie la duplicité des données et ajoute si la ville n'existe pas.
 
-    :param infosUser: List of all infos of Users in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
-    :return villes: List of cities present in the database
+    param infosUser : Liste de toutes les informations sur les utilisateurs de l'API
+    :param connection : Objet de connexion à la base de données
+    :param cursor : Objet curseur de la connexion à la base de données
+    :return villes : Liste des villes présentes dans la base de données
     """
     print("Ajout des villes à la base de données...")
     villes = []
@@ -287,21 +288,21 @@ def push_ville(infosUser, connection, cursor):
                     if ville != "''" and ville not in villes:
                         villes.append(ville)
                         
-                        # Check if the city already exists
+                        # Vérifier si la ville existe déjà
                         check_sql = f"""
                         SELECT id_ville FROM ville WHERE nom_ville = {ville};
                         """
                         cursor.execute(check_sql)
                         result = cursor.fetchone()
 
-                        #Check if the country exists
+                        # Vérifier si le pays existe
                         check_sql = f"""
                         SELECT acronyme_pays FROM pays WHERE nom_pays = {nom_pays};
                         """
                         cursor.execute(check_sql)
                         result_pays = cursor.fetchone()
 
-                        if not result and result_pays:  # Insert only if it does not exist
+                        if not result and result_pays:  # Insérer uniquement si la ville n'existe pas et que le pays existe.
                             pays = format_str(result_pays[0])
   
                             sql = f"""
@@ -312,17 +313,16 @@ def push_ville(infosUser, connection, cursor):
                             connection.commit()
     print("Succès à l'ajout des villes à la base de données.")
     return villes
-
-# Add address data to table adresse
+# Ajouter des adresses dans la table adresse
 def push_adresse(infosUser, connection, cursor):
     """
-    Insert all adresses in the table adresse.
-    Verifies duplicity of data and add if the main adress (adress 1) doesn't exist.
+    Insère toutes les adresses dans la table 'adresse'.
+    Vérifie les doublons de données et ajoute l'adresse principale (adresse 1) si elle n'existe pas.
 
-    :param infosUser: List of all infos of Users in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
-    :return list_adresses: array list of all adresses saved in the database (adress 1 to 4)
+    :param infosUser: Liste contenant toutes les informations des utilisateurs provenant de l'API.
+    :param connection: Objet de connexion à la base de données.
+    :param cursor: Objet curseur pour exécuter les requêtes SQL.
+    :return list_adresses: Tableau contenant toutes les adresses sauvegardées dans la base de données (adresse 1 à 4).
     """
     print("Ajout des adresses à la base de données...")
 
@@ -330,6 +330,7 @@ def push_adresse(infosUser, connection, cursor):
         if '_embedded' in info:
             if 'address' in info["_embedded"]:
 
+                # Récupération des informations d'adresse
                 adresses = getAdressesInfo(info["_embedded"]["address"])
 
                 for adresse in adresses:
@@ -343,6 +344,7 @@ def push_adresse(infosUser, connection, cursor):
                     nom_ville = adresses[adresse]["ville"]
                     nom_pays = adresses[adresse]["nomPays"]
                     
+                    # Formatage des données
                     type = format_str(adresse)
                     adresse1 = format_adress(adresse1)
                     adresse2 = format_adress(adresse2)
@@ -356,21 +358,21 @@ def push_adresse(infosUser, connection, cursor):
                     nom_pays = "'" + nom_pays + "'"
 
                     if adresse1 != "''":
-                        # Check if the main adress already exists
+                        # Vérifier si l'adresse principale existe déjà
                         check_sql = f"""
                         SELECT adresse_id FROM adresse WHERE id_personne = {user_id};
                         """
                         cursor.execute(check_sql)
                         result_adress1 = cursor.fetchone()
                         
-                        #Check if the city exists
+                        # Vérifier si la ville existe déjà
                         check_sql = f"""
                         SELECT id_ville FROM ville WHERE nom_ville = {nom_ville};
                         """
                         cursor.execute(check_sql)
                         result_city = cursor.fetchone()
 
-                        #Check if the type exists
+                        # Vérifier si le type d'adresse existe déjà
                         check_sql = f"""
                         SELECT id_type FROM type WHERE nom_type = {type};
                         """
@@ -383,14 +385,14 @@ def push_adresse(infosUser, connection, cursor):
                             type_adresse = format_str(adresse)
 
                             if not result_adress1 and code_postal != '':
-                                # Insert new address if it does not exist
+                                # Insérer une nouvelle adresse si elle n'existe pas
                                 sql = f"""
                                 INSERT INTO adresse (adresse_1, adresse_2, adresse_3, adresse_4, id_ville, npai, code_postal, type_adresse, id_type, id_personne)
                                 VALUES ({adresse1}, {adresse2}, {adresse3}, {adresse4}, {result_city}, {npai}, {code_postal}, {type_adresse}, {result_type}, {user_id});
                                 """
                                 cursor.execute(sql)
                             else:
-                                # Update existing address if it exists
+                                # Mettre à jour l'adresse existante si elle existe déjà
                                 sql = f"""
                                 UPDATE adresse
                                 SET adresse_1 = {adresse1}, 
@@ -407,17 +409,17 @@ def push_adresse(infosUser, connection, cursor):
                                 cursor.execute(sql)
 
                             connection.commit()
-    print("Succès à l'ajout des adresses à la base de données.")
+    print("Succès de l'ajout des adresses à la base de données.")
 
-#Add school data to table ecole
+# Ajouter les données des écoles dans la table ecole
 def push_ecoles(infosDiploma, connection, cursor):
     """
-    Insert all schools in the table ecole.
-    Verifies duplicity of data and add if the school doesn't exist.
+    Insère toutes les écoles dans la table 'ecole'.
+    Vérifie les doublons de données et ajoute si l'école n'existe pas.
 
-    :param infosDiploma: List of all infos of Diplomas in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
+    :param infosDiploma: Liste contenant toutes les informations des diplômes depuis l'API.
+    :param connection: Objet de connexion à la base de données.
+    :param cursor: Objet curseur pour exécuter les requêtes SQL.
     """
     print("Ajout des écoles à la base de données...")
     ecoles = []
@@ -426,7 +428,7 @@ def push_ecoles(infosDiploma, connection, cursor):
         if '_embedded' in info and 'diplomas' in info["_embedded"]:
             DiplomaInfo = getDiplomaInfo(info)
 
-            # Prepare school name and country's acronymn
+            # Préparer le nom de l'école et l'acronyme du pays
             nom_ecole = DiplomaInfo[0]["nom_ecole"]
             acronyme_pays = DiplomaInfo[0]["acronyme_pays_ecole"]
 
@@ -434,21 +436,21 @@ def push_ecoles(infosDiploma, connection, cursor):
             acronyme_pays = format_str(acronyme_pays)
 
             if nom_ecole != "''" and nom_ecole not in ecoles:
-                # Check if the school already exists
+                # Vérifier si l'école existe déjà
                 check_sql = f"""
                 SELECT id_ecole FROM ecole WHERE nom_ecole = {nom_ecole};
                 """
                 cursor.execute(check_sql)
                 result = cursor.fetchone()
 
-                # Check if the country already exists
+                # Vérifier si le pays existe déjà
                 check_sql = f"""
                 SELECT nom_pays FROM pays WHERE acronyme_pays = {acronyme_pays};
                 """
                 cursor.execute(check_sql)
                 result_pays = cursor.fetchone()
 
-                if not result and result_pays:  # Insert only if it does not exist
+                if not result and result_pays:  # Insérer uniquement si elle n'existe pas
                     sql = f"""
                             INSERT INTO ecole (nom_ecole, acronyme_pays)
                             VALUES ({nom_ecole}, {acronyme_pays});
@@ -457,18 +459,19 @@ def push_ecoles(infosDiploma, connection, cursor):
                     connection.commit()
 
                     ecoles.append(nom_ecole)
-    print("Succès à l'ajout des ecoles à la base de données.")
+    print("Succès de l'ajout des écoles à la base de données.")
 
 
+# Ajouter les données des personnes dans la table personne
 def push_personne(infosUser, connection, cursor):
     """
-    Insert all users in the table personne.
-    Verifies duplicity of data and add if the person doesn't exist.
-    If the person already exists, updates the data.
+    Insère toutes les personnes dans la table 'personne'.
+    Vérifie les doublons de données et ajoute si la personne n'existe pas.
+    Si la personne existe déjà, les données sont mises à jour.
 
-    :param infosUser: List of all infos of Users in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
+    :param infosUser: Liste contenant toutes les informations des utilisateurs depuis l'API.
+    :param connection: Objet de connexion à la base de données.
+    :param cursor: Objet curseur pour exécuter les requêtes SQL.
     """
     print("Ajout des personnes à la base de données...")
     for info in infosUser: 
@@ -477,14 +480,14 @@ def push_personne(infosUser, connection, cursor):
             
             user_id = personneInfo["id_personne"]
 
-            # Checks if person already exists
+            # Vérifier si la personne existe déjà
             check_sql = f"""
             SELECT id_personne FROM personne WHERE id_personne = {user_id};
             """
             cursor.execute(check_sql)
             personne = cursor.fetchone()
 
-            # Check if the country already exists
+            # Vérifier si le pays existe déjà
             check_sql = f"""
             SELECT acronyme_pays FROM pays WHERE UPPER(nom_pays) = UPPER({personneInfo["nationalite"]});
             """
@@ -496,7 +499,7 @@ def push_personne(infosUser, connection, cursor):
             else:
                 result_pays = 'NULL'
 
-            # Check if the city already exists
+            # Vérifier si la ville existe déjà
             check_sql = f"""
             SELECT id_ville FROM ville WHERE nom_ville = {personneInfo["ville"]};
             """
@@ -507,7 +510,7 @@ def push_personne(infosUser, connection, cursor):
             else:
                 result_ville = 'NULL'
 
-            # Check the id_type_utilisateur
+            # Vérifier l'id_type_utilisateur
             check_sql = f"""
             SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = {personneInfo["nom_type_utilisateur"]};
             """
@@ -515,7 +518,7 @@ def push_personne(infosUser, connection, cursor):
             result_type = cursor.fetchone()
             result_type = result_type[0]
 
-            if not personne:  # Insert only if it does not exist
+            if not personne:  # Insérer uniquement si elle n'existe pas
                 sql = f"""
                         INSERT INTO personne (id_personne, prenom, nom, nom_usage, date_naissance, ref_school, civilite, id_ville, adresse_mail, id_type_utilisateur, acronyme_pays, genre)
                         VALUES ({personneInfo['id_personne']}, {personneInfo['prenom']}, {personneInfo['nom']}, {personneInfo['nomUsage']}, {personneInfo['dateNaissance']}, {personneInfo['school_ref']}, {personneInfo['civilite']}, {result_ville}, {personneInfo['mail']}, {result_type}, {result_pays}, {personneInfo['genre']});
@@ -523,29 +526,26 @@ def push_personne(infosUser, connection, cursor):
                 cursor.execute(sql)
                 connection.commit()
 
-    print("Succès à l'ajout des personnes à la base de données.")
-                    
-            
-
-#Add diplome data to table diplome
+    print("Succès de l'ajout des personnes à la base de données.")
+# Ajouter les données des diplômes à la table diplome
 def push_diplome(infosDiploma, connection, cursor):
     """
-    Insert all diplomas in the table diplome.
-    Verifies duplicity of data and add if the diplome doesn't exist.
+    Insère tous les diplômes dans la table diplome.
+    Vérifie la duplication des données et ajoute si le diplôme n'existe pas.
 
-    :param infosDiploma: List of all infos of Diplomas in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
+    :param infosDiploma: Liste de toutes les informations sur les diplômes de l'API
+    :param connection: Objet de connexion à la base de données
+    :param cursor: Objet curseur de la connexion à la base de données
     """
-    print("Ajout des diplomes à la base de données...")
+    print("Ajout des diplômes à la base de données...")
     diplomes = []
 
     for info in infosDiploma: 
         if '_embedded' in info and 'diplomas' in info["_embedded"]:
             DiplomaInfo = getDiplomaInfo(info)
 
-            for i in range (len(DiplomaInfo)):
-                # Prepare school name and country's acronymn
+            for i in range(len(DiplomaInfo)):
+                # Préparation des noms d'école et acronymes de pays
                 id_diplome = DiplomaInfo[i]["id_diplome"]
                 ref_diploma = DiplomaInfo[i]["ref_diplome"]
                 nom_specialisation = DiplomaInfo[i]["nom_specialisation"]
@@ -557,32 +557,31 @@ def push_diplome(infosDiploma, connection, cursor):
                 nom_ecole = format_name(nom_ecole)
                 nom_diplome = format_name(nom_diplome)
                 parcours = format_name(parcours)
-
                 nom_specialisation = format_str(nom_specialisation)
 
                 if nom_diplome != "''":
-                    # Check if the diplome already exists
+                    # Vérifie si le diplôme existe déjà
                     check_sql = f"""
                     SELECT id_diplome FROM diplome WHERE nom_diplome = {nom_diplome};
                     """
                     cursor.execute(check_sql)
                     result = cursor.fetchone()
 
-                    # Search id for specialisation
+                    # Recherche l'ID pour la spécialisation
                     check_sql = f"""
                     SELECT id_specialisation FROM specialisation WHERE nom_specialisation = {nom_specialisation};
                     """
                     cursor.execute(check_sql)
                     result_spec = cursor.fetchone()
 
-                    #Search id for school
+                    # Recherche l'ID pour l'école
                     check_sql = f"""
                     SELECT id_ecole FROM ecole WHERE nom_ecole = {nom_ecole};
                     """
                     cursor.execute(check_sql)
                     result_ecole = cursor.fetchone()
 
-                    if not result and result_spec and result_ecole:  # Insert only if it does not exist
+                    if not result and result_spec and result_ecole:  # Insère uniquement s'il n'existe pas
                         id_specialisation = result_spec[0]
                         id_ecole = result_ecole[0]
                         sql = f"""
@@ -594,53 +593,54 @@ def push_diplome(infosDiploma, connection, cursor):
                         connection.commit()
 
                         diplomes.append(nom_diplome)
-    print("Succès à l'ajout des diplomes à la base de données.")
+    print("Succès à l'ajout des diplômes à la base de données.")
 
+# Ajouter des liens entre diplômes et personnes via a_un_diplome
 def push_a_un_diplome(infosDiploma, connection, cursor):
     """
-    Links the table diplome to the table personne via the table a_un_diplome.
-    Verifies duplicity of data and add if the diplome doesn't exist.
+    Relie la table diplome à la table personne via la table a_un_diplome.
+    Vérifie la duplication des données et ajoute si le lien n'existe pas.
 
-    :param infosDiploma: List of all infos of Diplomas in the API
-    :param connection: Connection object to the database
-    :param cursor: Cursor object of connection to the database
+    :param infosDiploma: Liste de toutes les informations sur les diplômes de l'API
+    :param connection: Objet de connexion à la base de données
+    :param cursor: Objet curseur de la connexion à la base de données
     """
-    print("Ajout des donnèes a_un_diplome à la base de données...")
+    print("Ajout des données a_un_diplome à la base de données...")
 
     for info in infosDiploma: 
         if '_embedded' in info and 'diplomas' in info["_embedded"]:
             DiplomaInfo = getDiplomaInfo(info)
             id_personne = info["id"]
 
-            for i in range (len(DiplomaInfo)):
-                # Prepare school name and country's acronymn
+            for i in range(len(DiplomaInfo)):
+                # Préparation des données du lien
                 id_diplome = DiplomaInfo[i]["id_diplome"]
                 est_diplome = DiplomaInfo[i]["estDiplome"]
                 dateDiplomation = DiplomaInfo[i]["dateDiplomation"]
                 dateIntegration = DiplomaInfo[i]["dateIntegration"]
 
-                # Check if the data already exists
+                # Vérifie si les données existent déjà
                 check_sql = f"""
                 SELECT id_diplome FROM a_un_diplome WHERE id_diplome = {id_diplome} AND id_personne = {id_personne};
                 """
                 cursor.execute(check_sql)
                 result = cursor.fetchone()
 
-                # Check if the person exists
+                # Vérifie si la personne existe
                 check_sql = f"""
                 SELECT id_personne FROM personne WHERE id_personne = {id_personne};
                 """
                 cursor.execute(check_sql)
                 result_personne = cursor.fetchone()
 
-                # Check if the diplome exists
+                # Vérifie si le diplôme existe
                 check_sql = f"""
                 SELECT id_diplome FROM diplome WHERE id_diplome = {id_diplome};
                 """
                 cursor.execute(check_sql)
                 result_diplome = cursor.fetchone()
 
-                if not result and result_diplome and result_personne:  # Insert only if it does not exist and if the data is valid          
+                if not result and result_diplome and result_personne:  # Insère uniquement si valide          
                     if dateDiplomation != '':
                         dateDiplomation = format_str(dateDiplomation)
                     else:
@@ -658,45 +658,45 @@ def push_a_un_diplome(infosDiploma, connection, cursor):
                     cursor.execute(sql)
                     connection.commit()
 
-    print("Succès à l'ajout des liens diplomes/personnes à la base de données.")
+    print("Succès à l'ajout des liens diplômes/personnes à la base de données.")
 
 
-#%% Charge data from API
+#%% Charger les données depuis l'API
 
-# Enables async calls to API requests
+# Active les appels asynchrones aux requêtes API
 import nest_asyncio
 nest_asyncio.apply()
 
-# Starts timer
+# Démarre le chronomètre
 start_time = datetime.now()
 
-# Charges needed data from API
+# Charge les données nécessaires depuis l'API
 infosDiploma = asyncio.run(fetchData_async("diploma"))
 infosUser = asyncio.run(fetchData_async("profile"))
 
-# Informs total duration of data gathering
+# Informe la durée totale de récupération des données
 end_time = datetime.now()
-print("Duration recuperation de donnees de l'API: {}".format(end_time - start_time))
+print("Durée de récupération des données de l'API : {}".format(end_time - start_time))
 
-#%% Push data in database
+#%% Insérer les données dans la base de données
 
-# Establishes connection with database
+# Établit la connexion avec la base de données
 connection, cursor = init()
 
-# Starts timer
+# Démarre le chronomètre
 start_time = datetime.now()
 
-# Populates tpecialisation and type_utilisateur tables 
+# Remplit les tables specialisation et type_utilisateur
 push_specialisation(infosDiploma, connection, cursor)
 push_type_utilisateur(infosUser, connection, cursor)
 
-# Populates type and mail tables (this must be done in this order)
+# Remplit les tables type et mail (doit être fait dans cet ordre)
 types = []
 types = push_type_mail(infosUser, connection, cursor, types)
 types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
 
-# Populates ville, personne, adresse, ecole, diplome and a_un_diplome tables
+# Remplit les tables ville, personne, adresse, ecole, diplome et a_un_diplome
 push_ville(infosUser, connection, cursor)
 push_personne(infosUser, connection, cursor)
 push_adresse(infosUser, connection, cursor)
@@ -704,11 +704,11 @@ push_ecoles(infosDiploma, connection, cursor)
 push_diplome(infosDiploma, connection, cursor)
 push_a_un_diplome(infosDiploma, connection, cursor)
 
-# Ends connection with database
+# Termine la connexion avec la base de données
 cursor.close()
 
-# Mesures time needed to insert data into the database
+# Mesure le temps nécessaire pour insérer les données dans la base de données
 end_time = datetime.now()
-print('Durée de la mise à jour de la base de donnees: {}'.format(end_time - start_time))
+print('Durée de la mise à jour de la base de données : {}'.format(end_time - start_time))
 
 # %%

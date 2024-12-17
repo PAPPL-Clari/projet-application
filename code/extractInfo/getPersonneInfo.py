@@ -1,5 +1,7 @@
 #txt: entree du type json pour extraire les infos pertinentes de la personne
-#return: dictionary avec les infos de prenom, nom, id, school_ref, dateNaissance, nationalite (acronyme)
+#return: dictionary avec les infos de prenom, nom, nom d'usage, id, 
+# school_ref, dateNaissance, nationalite, genre, ville, 
+# type d'utilisateur et mail
 from .format import format_str
 
 def getPersonneInfo(result):

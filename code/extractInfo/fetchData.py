@@ -20,13 +20,13 @@ async def fetch_page(session, url, semaphore, retries=3, backoff_factor=1):
                     if response.status == 200:
                         return await response.json()
                     else:
-                        print(f"Tentativa {attempt + 1}: URL: {url}, Status Code: {response.status}, Response: {await response.text()}")
+                        print(f"Essai {attempt + 1}: URL: {url}, Status Code: {response.status}, Response: {await response.text()}")
             except Exception as e:
-                print(f"Erro na tentativa {attempt + 1} ao buscar URL {url}: {e}")
+                print(f"Erreur dans l'essai {attempt + 1} pour l'URL {url}: {e}")
             
-            # Esperar antes de tentar novamente (exponential backoff)
+            # Attendre pour essayer à nouveau (exponential backoff)
             await asyncio.sleep(backoff_factor * (2 ** attempt))
-        print(f"Falha após {retries} tentativas: {url}")
+        print(f"Échec après {retries} essais: {url}")
         return None
 
 async def fetchData_async(type): 

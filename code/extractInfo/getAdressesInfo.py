@@ -1,11 +1,12 @@
+#txt: entree du type json pour extraire les infos de adresse de la personne
+#return: dictionary avec les infos d'adresse, ville, code postal, pays 
+#et NPAI (n'habite pas à l'adresse indiqué)
+
 def getAdressesInfo(result):
     infoAddresse = dict()
     coordonnees = dict()
 
-    #print(result)
-
     for address in result:
-        #print(address)
 
         if "address" in address:
             adresse1 = address['address']
