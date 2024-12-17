@@ -10,18 +10,24 @@ def jprint(obj):
     text = json.dumps(obj, sort_keys=True, indent=4)
     print(text)
 
-async def fetch_page(session, url, semaphore):
+import asyncio
+
+async def fetch_page(session, url, semaphore, retries=3, backoff_factor=1):
     async with semaphore:
-        try:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    return await response.json()
-                else:
-                    print(f"URL: {url}, Status Code: {response.status}, Response: {await response.text()}")
-                    return None
-        except Exception as e:
-            print(f"Erro ao buscar URL {url}: {e}")
-            return None
+        for attempt in range(retries):
+            try:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        return await response.json()
+                    else:
+                        print(f"Tentativa {attempt + 1}: URL: {url}, Status Code: {response.status}, Response: {await response.text()}")
+            except Exception as e:
+                print(f"Erro na tentativa {attempt + 1} ao buscar URL {url}: {e}")
+            
+            # Esperar antes de tentar novamente (exponential backoff)
+            await asyncio.sleep(backoff_factor * (2 ** attempt))
+        print(f"Falha após {retries} tentativas: {url}")
+        return None
 
 async def fetchData_async(type): 
     # Base URL de la plataforme CNA
@@ -40,7 +46,7 @@ async def fetchData_async(type):
     ]
 
     result = []
-    semaphore = asyncio.Semaphore(60)  # Limitation de 60 connexions simultanées
+    semaphore = asyncio.Semaphore(50)  # Limitation de 20 connexions simultanées
 
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_page(session, url, semaphore) for url in urls]

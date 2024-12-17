@@ -75,7 +75,7 @@ CREATE TABLE public.personne (
     ref_school VARCHAR(128),
     civilite VARCHAR(64),
     id_ville INTEGER,
-    adresse_mail VARCHAR(128) NOT NULL,
+    adresse_mail VARCHAR(128),
     genre VARCHAR(128) NOT NULL,
     id_type_utilisateur INTEGER NOT NULL,
     acronyme_pays VARCHAR(128),

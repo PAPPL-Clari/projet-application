@@ -11,81 +11,7 @@ from extractInfo.getAdressesInfo import getAdressesInfo
 from extractInfo.getPersonneInfo import getPersonneInfo
 from datetime import datetime
 import psycopg2
-
-def jprint(obj):
-    """
-    Print JSON objet with identation.
-
-    :param obj: A string in format JSON
-    :return: returns nothing
-    """
-
-    text = json.dumps(obj, sort_keys=True, indent=4)
-    print(text)
-
-def format_name(city_name):
-    """
-    Format names in order to normalise data.
-    Removes special characters, hifens and substitues single '' to double,
-    Put every first character of a word with majuscule and the other minuscule.
-    Ex: SUCE-SUR-ERDRE turns to Suce Sur Erdre
-
-    :param name: A string
-    :return: normalized_name: String 
-    """
-    city_name = unidecode(city_name)
-    city_name = city_name.lower()
-    city_name = city_name.replace('-', ' ')
-    city_name = ' '.join(city_name.split())
-    normalized_name = city_name.title()
-    normalized_name = normalized_name.replace("'", "''")
-    normalized_name = "'" + normalized_name + "'"
-
-    return normalized_name
-
-def format_adress(adress):
-    """
-    Format adress names in order to fit in 128 characters.
-    :param adress: A string
-    :return: adress: String with 128 characters
-
-    """
-    adress = format_name(adress)
-    if (len(adress)> 127):
-        adress = adress[:128]+ "'"
-    return adress
-
-def format_code_postal(code):
-    """
-    Format zip code in order to normalise data.
-    Verifies if its an integer, if not, defines it as zero.
-
-    :param name: A zip code, string format
-    :return: modified code 
-    """
-    try:
-        code = int(code[0:5])
-        return code
-    except ValueError:
-        code = 0
-
-    return code
-
-def format(str):
-    """
-    Format a string in order to avoid SQL query errors.
-    Remove special characters, replace single quotes to double ' -> ''
-    and puts an initial ' in the beginning and end of the string.
-    Ex: Côte d'Ivoire -> 'Cote d''Ivoire'
-
-    :param str: A string
-    :return: str: Modified string 
-    """
-    str = unidecode(str)
-    str = str.replace("'", "''")
-    str = "'" + str + "'"
-
-    return str
+from extractInfo.format import format_str, format_name, format_adress, format_code_postal
 
 def init():
     """
@@ -246,7 +172,6 @@ def push_type_adress(infosUser, connection, cursor, types):
     for info in infosUser: 
         if '_embedded' in info:
             if 'address' in info["_embedded"]:
-                #jprint(info)
 
                 nom_type = getAdressesInfo(info["_embedded"]["address"]).keys()
 
@@ -377,7 +302,7 @@ def push_ville(infosUser, connection, cursor):
                         result_pays = cursor.fetchone()
 
                         if not result and result_pays:  # Insert only if it does not exist
-                            pays = format(result_pays[0])
+                            pays = format_str(result_pays[0])
   
                             sql = f"""
                             INSERT INTO ville (nom_ville, acronyme_pays)
@@ -404,7 +329,6 @@ def push_adresse(infosUser, connection, cursor):
     for info in infosUser: 
         if '_embedded' in info:
             if 'address' in info["_embedded"]:
-                #jprint(info)
 
                 adresses = getAdressesInfo(info["_embedded"]["address"])
 
@@ -419,7 +343,7 @@ def push_adresse(infosUser, connection, cursor):
                     nom_ville = adresses[adresse]["ville"]
                     nom_pays = adresses[adresse]["nomPays"]
                     
-                    type = format(adresse)
+                    type = format_str(adresse)
                     adresse1 = format_adress(adresse1)
                     adresse2 = format_adress(adresse2)
                     adresse3 = format_adress(adresse3)
@@ -456,7 +380,7 @@ def push_adresse(infosUser, connection, cursor):
                         if result_city and result_type:
                             result_city = result_city[0]
                             result_type = result_type[0]
-                            type_adresse = format(adresse)
+                            type_adresse = format_str(adresse)
 
                             if not result_adress1 and code_postal != '':
                                 # Insert new address if it does not exist
@@ -507,7 +431,7 @@ def push_ecoles(infosDiploma, connection, cursor):
             acronyme_pays = DiplomaInfo[0]["acronyme_pays_ecole"]
 
             nom_ecole = format_name(nom_ecole)
-            acronyme_pays = format(acronyme_pays)
+            acronyme_pays = format_str(acronyme_pays)
 
             if nom_ecole != "''" and nom_ecole not in ecoles:
                 # Check if the school already exists
@@ -562,32 +486,42 @@ def push_personne(infosUser, connection, cursor):
 
             # Check if the country already exists
             check_sql = f"""
-            SELECT acronyme_pays FROM pays WHERE UPPER(nom_pays) = UPPER({format(personneInfo["nationalite"])});
+            SELECT acronyme_pays FROM pays WHERE UPPER(nom_pays) = UPPER({personneInfo["nationalite"]});
             """
             cursor.execute(check_sql)
             result_pays = cursor.fetchone()
+            if result_pays:
+                result_pays = result_pays[0]
+                result_pays = format_str(result_pays)
+            else:
+                result_pays = 'NULL'
 
             # Check if the city already exists
             check_sql = f"""
-            SELECT id_ville FROM ville WHERE nom_ville = {format(personneInfo["ville"])};
+            SELECT id_ville FROM ville WHERE nom_ville = {personneInfo["ville"]};
             """
             cursor.execute(check_sql)
             result_ville = cursor.fetchone()
+            if result_ville:
+                result_ville = result_ville[0]
+            else:
+                result_ville = 'NULL'
 
             # Check the id_type_utilisateur
             check_sql = f"""
-            SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = {format(personneInfo["nom_type_utilisateur"])};
+            SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = {personneInfo["nom_type_utilisateur"]};
             """
             cursor.execute(check_sql)
             result_type = cursor.fetchone()
-            print(user_id)
-            if not personne and result_pays and result_ville and result_type:  # Insert only if it does not exist
-                    sql = f"""
-                            INSERT INTO personne (id_personne, prenom, nom, nom_usage, date_naissance, ref_school, civilite, id_ville, adresse_mail, id_type_utilisateur, acronyme_pays, genre)
-                            VALUES ({personneInfo['id_personne']}, '{personneInfo['prenom']}', '{personneInfo['nom']}', '{personneInfo['nomUsage']}', '{personneInfo['dateNaissance']}', '{personneInfo['school_ref']}', '{personneInfo['civilite']}', {result_ville}, '{personneInfo['mail']}', {result_type}, {result_pays}, '{personneInfo['genre']}');
-                            """
-                    cursor.execute(sql)
-                    connection.commit()
+            result_type = result_type[0]
+
+            if not personne:  # Insert only if it does not exist
+                sql = f"""
+                        INSERT INTO personne (id_personne, prenom, nom, nom_usage, date_naissance, ref_school, civilite, id_ville, adresse_mail, id_type_utilisateur, acronyme_pays, genre)
+                        VALUES ({personneInfo['id_personne']}, {personneInfo['prenom']}, {personneInfo['nom']}, {personneInfo['nomUsage']}, {personneInfo['dateNaissance']}, {personneInfo['school_ref']}, {personneInfo['civilite']}, {result_ville}, {personneInfo['mail']}, {result_type}, {result_pays}, {personneInfo['genre']});
+                        """
+                cursor.execute(sql)
+                connection.commit()
 
     print("Succès à l'ajout des personnes à la base de données.")
                     
@@ -618,12 +552,12 @@ def push_diplome(infosDiploma, connection, cursor):
             nom_diplome = DiplomaInfo[0]["nom_diplome"] 
             parcours = DiplomaInfo[0]["parcours"]
 
-            ref_diploma = format(ref_diploma)
+            ref_diploma = format_str(ref_diploma)
             nom_ecole = format_name(nom_ecole)
             nom_diplome = format_name(nom_diplome)
             parcours = format_name(parcours)
 
-            nom_specialisation = format(nom_specialisation)
+            nom_specialisation = format_str(nom_specialisation)
 
             if nom_diplome != "''" and nom_diplome not in diplomes:
                 # Check if the diplome already exists
@@ -655,7 +589,6 @@ def push_diplome(infosDiploma, connection, cursor):
                                                  nom_diplome, parcours)
                             VALUES ({id_diplome}, {ref_diploma}, {id_specialisation}, {id_ecole}, {nom_diplome}, {parcours});
                             """
-                    print(sql)
                     cursor.execute(sql)
                     connection.commit()
 
@@ -687,19 +620,18 @@ connection, cursor = init()
 # Starts timer
 start_time = datetime.now()
 
-'''# Populates tpecialisation and type_utilisateur tables 
+# Populates tpecialisation and type_utilisateur tables 
 push_specialisation(infosDiploma, connection, cursor)
 push_type_utilisateur(infosUser, connection, cursor)
 
 # Populates type and mail tables (this must be done in this order)
-'''
-'''types = []
+types = []
 types = push_type_mail(infosUser, connection, cursor, types)
 types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
 
 # Populates ville, personne, adresse, ecole and diplome tables
-push_ville(infosUser, connection, cursor)'''
+push_ville(infosUser, connection, cursor)
 push_personne(infosUser, connection, cursor)
 push_adresse(infosUser, connection, cursor)
 push_ecoles(infosDiploma, connection, cursor)
@@ -711,6 +643,5 @@ cursor.close()
 # Mesures time needed to insert data into the database
 end_time = datetime.now()
 print('Durée de la mise à jour de la base de donnees: {}'.format(end_time - start_time))
-
 
 # %%
