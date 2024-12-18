@@ -477,7 +477,6 @@ def push_personne(infosUser, connection, cursor):
     print("Ajout ou mise à jour des personnes dans la base de données...")
     for info in infosUser: 
         if '_embedded' in info and 'civil' in info["_embedded"] and 'type' in info["_embedded"] and 'address' in info["_embedded"]:
-            print(info["id"])
             personneInfo = getPersonneInfo(info)
             
             user_id = personneInfo["id_personne"]
@@ -714,7 +713,7 @@ connection, cursor = init()
 
 # Démarre le chronomètre
 start_time = datetime.now()
-'''
+
 # Remplit les tables specialisation et type_utilisateur
 push_specialisation(infosDiploma, connection, cursor)
 push_type_utilisateur(infosUser, connection, cursor)
@@ -726,7 +725,7 @@ types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
 
 # Remplit les tables ville, personne, adresse, ecole, diplome et a_un_diplome
-push_ville(infosUser, connection, cursor)'''
+push_ville(infosUser, connection, cursor)
 push_personne(infosUser, connection, cursor)
 push_adresse(infosUser, connection, cursor)
 push_ecoles(infosDiploma, connection, cursor)
