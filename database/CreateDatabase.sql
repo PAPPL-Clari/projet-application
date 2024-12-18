@@ -5,6 +5,8 @@ CREATE SEQUENCE public.type_id_seq;
 CREATE SEQUENCE public.ecole_id_seq;
 CREATE SEQUENCE public.ville_id_seq;
 CREATE SEQUENCE public.adresse_id_seq;
+CREATE SEQUENCE public.diplome_id_seq;
+
 
 -- Tables
 CREATE TABLE public.specialisation (
@@ -47,11 +49,11 @@ CREATE TABLE public.ecole (
 );
 
 CREATE TABLE public.diplome (
-    id_diplome INTEGER NOT NULL,
+    id_diplome INTEGER NOT NULL DEFAULT nextval('public.diplome_id_seq'),
     ref_diploma VARCHAR(128) NOT NULL,
     id_specialisation INTEGER,
     id_ecole INTEGER NOT NULL,
-    nom_diplome VARCHAR(256) NOT NULL,
+    nom_diplome VARCHAR(256) NOT NULL UNIQUE,
     parcours VARCHAR(128) NOT NULL,
     CONSTRAINT diplome_pk PRIMARY KEY (id_diplome),
     CONSTRAINT specialisation_diplome_fk FOREIGN KEY (id_specialisation) REFERENCES public.specialisation (id_specialisation),
@@ -72,15 +74,15 @@ CREATE TABLE public.personne (
     nom VARCHAR NOT NULL,
     nom_usage VARCHAR(128),
     date_naissance DATE,
+    derniere_mise_a_jour DATE,
     ref_school VARCHAR(128),
     civilite VARCHAR(64),
     id_ville INTEGER,
     adresse_mail VARCHAR(128),
-    genre VARCHAR(128) NOT NULL,
     id_type_utilisateur INTEGER NOT NULL,
     acronyme_pays VARCHAR(128),
     CONSTRAINT personne_pk PRIMARY KEY (id_personne),
-    CONSTRAINT ville_personne_fk FOREIGN KEY (id_ville_naissance) REFERENCES public.ville (id_ville),
+    CONSTRAINT ville_personne_fk FOREIGN KEY (id_ville) REFERENCES public.ville (id_ville),
     CONSTRAINT mail_personne_fk FOREIGN KEY (adresse_mail) REFERENCES public.mail (adresse_mail),
     CONSTRAINT type_utilisateur_personne_fk FOREIGN KEY (id_type_utilisateur) REFERENCES public.type_utilisateur (id_type_utilisateur),
     CONSTRAINT pays_personne_fk FOREIGN KEY (acronyme_pays) REFERENCES public.pays (acronyme_pays)
@@ -108,7 +110,7 @@ CREATE TABLE public.a_un_diplome (
     id_diplome INTEGER NOT NULL,
     id_personne INTEGER NOT NULL,
     date_diplomation DATE,
-    date_integration DATE,
+    date_integration DATE NOT NULL,
     est_diplome BOOLEAN NOT NULL,
     CONSTRAINT a_un_diplome_pk PRIMARY KEY (id_diplome, id_personne),
     CONSTRAINT diplome_a_un_diplome_fk FOREIGN KEY (id_diplome) REFERENCES public.diplome (id_diplome),
@@ -122,6 +124,7 @@ ALTER SEQUENCE public.type_id_seq OWNED BY public.type.id_type;
 ALTER SEQUENCE public.ecole_id_seq OWNED BY public.ecole.id_ecole;
 ALTER SEQUENCE public.ville_id_seq OWNED BY public.ville.id_ville;
 ALTER SEQUENCE public.adresse_id_seq OWNED BY public.adresse.adresse_id;
+ALTER SEQUENCE public.diplome_id_seq OWNED BY public.diplome.id_diplome;
 
 -- Populating country table
 INSERT INTO pays (acronyme_pays, nom_pays) VALUES 

@@ -50,8 +50,7 @@ def push_specialisation(infosDiploma, connection, cursor):
 
             # Prepare le nom de la specialisation 
             nom_specialisation = DiplomaInfo[0]["nom_specialisation"]
-            nom_specialisation = nom_specialisation.replace("'", "''")  # Escape single quotes
-            nom_specialisation = "'" + nom_specialisation + "'"
+            nom_specialisation = format_str(nom_specialisation)
 
             if nom_specialisation != "''" and nom_specialisation not in specialisations:
                 # Vérifier si la spécialisation existe déjà
@@ -478,6 +477,7 @@ def push_personne(infosUser, connection, cursor):
     print("Ajout ou mise à jour des personnes dans la base de données...")
     for info in infosUser: 
         if '_embedded' in info and 'civil' in info["_embedded"] and 'type' in info["_embedded"] and 'address' in info["_embedded"]:
+            print(info["id"])
             personneInfo = getPersonneInfo(info)
             
             user_id = personneInfo["id_personne"]
@@ -522,8 +522,9 @@ def push_personne(infosUser, connection, cursor):
 
             if not personne:  # Insérer uniquement si la personne n'existe pas
                 sql = f"""
-                        INSERT INTO personne (id_personne, prenom, nom, nom_usage, date_naissance, ref_school, civilite, id_ville, adresse_mail, id_type_utilisateur, acronyme_pays, genre)
-                        VALUES ({personneInfo['id_personne']}, {personneInfo['prenom']}, {personneInfo['nom']}, {personneInfo['nomUsage']}, {personneInfo['dateNaissance']}, {personneInfo['school_ref']}, {personneInfo['civilite']}, {result_ville}, {personneInfo['mail']}, {result_type}, {result_pays}, {personneInfo['genre']});
+                        INSERT INTO personne (id_personne, prenom, nom, nom_usage, date_naissance, ref_school, civilite, id_ville, adresse_mail, id_type_utilisateur, acronyme_pays, derniere_mise_a_jour)
+                        VALUES ({personneInfo['id_personne']}, {personneInfo['prenom']}, {personneInfo['nom']}, {personneInfo['nomUsage']}, {personneInfo['dateNaissance']}, {personneInfo['school_ref']}, 
+                                {personneInfo['civilite']}, {result_ville}, {personneInfo['mail']}, {result_type}, {result_pays}, {personneInfo['miseAJour']});
                         """
                 cursor.execute(sql)
             else:  # Mettre à jour les données si la personne existe
@@ -539,7 +540,7 @@ def push_personne(infosUser, connection, cursor):
                             adresse_mail = {personneInfo['mail']},
                             id_type_utilisateur = {result_type},
                             acronyme_pays = {result_pays},
-                            genre = {personneInfo['genre']}
+                            derniere_mise_a_jour = {personneInfo['miseAJour']}
                         WHERE id_personne = {personneInfo['id_personne']};
                         """
                 cursor.execute(sql)
@@ -567,7 +568,6 @@ def push_diplome(infosDiploma, connection, cursor):
 
             for i in range(len(DiplomaInfo)):
                 # Préparation des noms d'école et acronymes de pays
-                id_diplome = DiplomaInfo[i]["id_diplome"]
                 ref_diploma = DiplomaInfo[i]["ref_diplome"]
                 nom_specialisation = DiplomaInfo[i]["nom_specialisation"]
                 nom_ecole = DiplomaInfo[i]["nom_ecole"]
@@ -606,9 +606,9 @@ def push_diplome(infosDiploma, connection, cursor):
                         id_specialisation = result_spec[0]
                         id_ecole = result_ecole[0]
                         sql = f"""
-                                INSERT INTO diplome (id_diplome, ref_diploma, id_specialisation, id_ecole, 
+                                INSERT INTO diplome (ref_diploma, id_specialisation, id_ecole, 
                                                     nom_diplome, parcours)
-                                VALUES ({id_diplome}, {ref_diploma}, {id_specialisation}, {id_ecole}, {nom_diplome}, {parcours});
+                                VALUES ({ref_diploma}, {id_specialisation}, {id_ecole}, {nom_diplome}, {parcours});
                                 """
                         cursor.execute(sql)
                         connection.commit()
@@ -636,17 +636,24 @@ def push_a_un_diplome(infosDiploma, connection, cursor):
 
             for i in range(len(DiplomaInfo)):
                 # Préparation des données du lien
-                id_diplome = DiplomaInfo[i]["id_diplome"]
                 est_diplome = DiplomaInfo[i]["estDiplome"]
-                dateDiplomation = DiplomaInfo[i]["dateDiplomation"]
-                dateIntegration = DiplomaInfo[i]["dateIntegration"]
+                nom_diplome = format_name(DiplomaInfo[i]["nom_diplome"])
 
-                # Vérifie si le lien existe déjà
+                dateDiplomation = DiplomaInfo[i]["dateDiplomation"]
+                if dateDiplomation != '':
+                    dateDiplomation = format_str(dateDiplomation)
+                else:
+                    dateDiplomation = 'NULL'
+                
+                dateIntegration = DiplomaInfo[i]["dateIntegration"]
+                dateIntegration = format_str(dateIntegration)
+
+                # Vérifie si le diplôme existe
                 check_sql = f"""
-                SELECT id_diplome FROM a_un_diplome WHERE id_diplome = {id_diplome} AND id_personne = {id_personne};
+                SELECT id_diplome FROM diplome WHERE nom_diplome = {nom_diplome};
                 """
                 cursor.execute(check_sql)
-                result = cursor.fetchone()
+                result_diplome = cursor.fetchone()
 
                 # Vérifie si la personne existe
                 check_sql = f"""
@@ -655,25 +662,17 @@ def push_a_un_diplome(infosDiploma, connection, cursor):
                 cursor.execute(check_sql)
                 result_personne = cursor.fetchone()
 
-                # Vérifie si le diplôme existe
-                check_sql = f"""
-                SELECT id_diplome FROM diplome WHERE id_diplome = {id_diplome};
-                """
-                cursor.execute(check_sql)
-                result_diplome = cursor.fetchone()
-
                 if result_diplome and result_personne:  # Vérifie que les données sont valides
-                    if dateDiplomation != '':
-                        dateDiplomation = format_str(dateDiplomation)
-                    else:
-                        dateDiplomation = 'NULL'
+                    id_diplome = result_diplome[0]
+                    
+                    # Vérifie si le lien existe déjà
+                    check_sql = f"""
+                    SELECT id_diplome FROM a_un_diplome WHERE id_diplome = {id_diplome} AND id_personne = {id_personne};
+                    """
+                    cursor.execute(check_sql)
+                    result = cursor.fetchone()
 
-                    if dateIntegration != '':
-                        dateIntegration = format_str(dateIntegration)
-                    else:
-                        dateIntegration = 'NULL'
-
-                    if not result:  # Insère un nouveau lien si inexistant
+                    if not result:  # Insère un nouveau lien si inexistant                   
                         sql = f"""
                                 INSERT INTO a_un_diplome (id_diplome, id_personne, date_diplomation, date_integration, est_diplome)
                                 VALUES ({id_diplome}, {id_personne}, {dateDiplomation}, {dateIntegration}, {est_diplome});
@@ -715,7 +714,7 @@ connection, cursor = init()
 
 # Démarre le chronomètre
 start_time = datetime.now()
-
+'''
 # Remplit les tables specialisation et type_utilisateur
 push_specialisation(infosDiploma, connection, cursor)
 push_type_utilisateur(infosUser, connection, cursor)
@@ -727,7 +726,7 @@ types = push_type_adress(infosUser, connection, cursor, types)
 push_mail(infosUser, connection, cursor, types)
 
 # Remplit les tables ville, personne, adresse, ecole, diplome et a_un_diplome
-push_ville(infosUser, connection, cursor)
+push_ville(infosUser, connection, cursor)'''
 push_personne(infosUser, connection, cursor)
 push_adresse(infosUser, connection, cursor)
 push_ecoles(infosDiploma, connection, cursor)

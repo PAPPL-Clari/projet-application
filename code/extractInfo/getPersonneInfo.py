@@ -1,6 +1,6 @@
 #txt: entree du type json pour extraire les infos pertinentes de la personne
 #return: dictionary avec les infos de prenom, nom, nom d'usage, id, 
-# school_ref, dateNaissance, nationalite, genre, ville, 
+# school_ref, dateNaissance, nationalite, ville, date of the last update
 # type d'utilisateur et mail
 from extractInfo.format import format_str
 
@@ -42,14 +42,6 @@ def getPersonneInfo(result):
         nationalite = result["_embedded"]["civil"]["_embedded"]["nationality"]["name"] # Country name, not acronym
         nationalite = format_str(nationalite)
 
-    # Genre 
-    genre = result["_embedded"]["civil"]["gender"]
-    if ( genre == "0"):
-        genre = "masculin"
-    else: 
-        genre = "feminin" 
-    genre = format_str(genre)
-
     # Ville 
     ville = "NULL"
     if 'city' in result["_embedded"]["address"][0]:
@@ -60,7 +52,17 @@ def getPersonneInfo(result):
     nom_type_utilisateur = result["_embedded"]["type"]["name"]
     nom_type_utilisateur = "'" + nom_type_utilisateur + "'"
 
-    # Email -- not everyone has one, fix this
+    # Date de la dernière mise a jour
+    mise_a_jour = "NULL"
+    if "updated" in result:
+        mise_a_jour = result["updated"]
+        # Séparer date et timestamp
+        mise_a_jour = mise_a_jour.split()
+        # Prendre que la date
+        mise_a_jour = mise_a_jour[0]
+        mise_a_jour = format_str(mise_a_jour)
+
+    # Email 
     mail = "NULL"
     if "emails" in result["_embedded"]:
         mail = result["_embedded"]["emails"][0]["address"]
@@ -68,7 +70,8 @@ def getPersonneInfo(result):
         
     infosPersonnelles.update( id_personne = id_util, school_ref = school_ref, civilite = civil, prenom = prenom,
                              nom = nom, nomUsage = nomUsage, dateNaissance = dateNaissance,
-                             nationalite = nationalite, genre = genre, ville = ville, nom_type_utilisateur = nom_type_utilisateur, mail = mail
+                             nationalite = nationalite, ville = ville, nom_type_utilisateur = nom_type_utilisateur, 
+                             mail = mail, miseAJour = mise_a_jour
                             )
     
     return infosPersonnelles
