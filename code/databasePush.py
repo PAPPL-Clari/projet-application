@@ -689,7 +689,8 @@ def push_a_un_diplome(infosDiploma, connection, cursor):
 
     print("Succès à l'ajout ou mise à jour des liens diplômes/personnes dans la base de données.")
 
-#%% Charger les données depuis l'API
+#%% 
+# Charger les données depuis l'API
 
 # Active les appels asynchrones aux requêtes API
 import nest_asyncio
@@ -706,7 +707,8 @@ infosUser = asyncio.run(fetchData_async("profile"))
 end_time = datetime.now()
 print("Durée de récupération des données de l'API : {}".format(end_time - start_time))
 
-#%% Insérer les données dans la base de données
+#%% 
+# Insérer les données dans la base de données
 
 # Établit la connexion avec la base de données
 connection, cursor = init()
