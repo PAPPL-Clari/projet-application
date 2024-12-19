@@ -59,7 +59,7 @@ async def fetchData_async(type):
     elif type == "profile":
         query = "/api/v2/customer/profile/people"
     else:
-        raise ValueError("Tipo inválido")  # Erreur si le type est invalide
+        raise ValueError("Type invalide")  # Erreur si le type est invalide
 
     # Génère une liste d'URL pour les pages à récupérer (248 pages, 100 utilisateurs par page)
     urls = [
