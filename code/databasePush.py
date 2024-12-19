@@ -1,8 +1,7 @@
-#%%
 import asyncio
 import config
 from unidecode import unidecode
-import json
+import nest_asyncio
 from extractInfo.fetchData import fetchData_async
 from extractInfo.getDiplomaInfo import getDiplomaInfo
 from extractInfo.getUtilisateurInfo import getUtilisateurInfo
@@ -27,7 +26,7 @@ def init():
                                 password=config.password,
                                 host="localhost", port=5432)
     cursor = connection.cursor() # Ouvrir un curseur pour effectuer des opérations sur la base de données
-    print("Connexion à la base de données établi.")
+    print("Connexion à la base de données établi.\n")
 
     return connection, cursor
 
@@ -69,7 +68,7 @@ def push_specialisation(infosDiploma, connection, cursor):
                     connection.commit()
 
                 specialisations.append(nom_specialisation)
-    print("Succès à l'ajout des specialisations à la base de données.")
+    print("Succès à l'ajout des specialisations à la base de données.\n")
 
 # Ajoute des données à la table « type_utilisateur »
 def push_type_utilisateur(infosUser, connection, cursor):
@@ -112,7 +111,7 @@ def push_type_utilisateur(infosUser, connection, cursor):
                         cursor.execute(sql)
                         connection.commit()
 
-    print("Succès à l'ajout des types d'utilisateur à la base de données.")
+    print("Succès à l'ajout des types d'utilisateur à la base de données.\n")
 
 # Ajoute les données type_mail à la table « type »
 def push_type_mail(infosUser, connection, cursor, types):
@@ -153,7 +152,7 @@ def push_type_mail(infosUser, connection, cursor, types):
                             """
                             cursor.execute(sql)
                             connection.commit()
-    print("Succès à l'ajout des types de mail à la base de données.")
+    print("Succès à l'ajout des types de mail à la base de données.\n")
     return types
 
 # Ajouter les données type_adresse à la table « type »
@@ -195,7 +194,7 @@ def push_type_adress(infosUser, connection, cursor, types):
                             """
                             cursor.execute(sql)
                             connection.commit()
-    print("Succès à l'ajout des types d'adresse à la base de données.")
+    print("Succès à l'ajout des types d'adresse à la base de données.\n")
     return types
 
 # Ajouter les données mail au tableau mail
@@ -256,7 +255,7 @@ def push_mail(infosUser, connection, cursor, types):
 
                     mails.append(newMail)
 
-    print("Succès à l'ajout ou mise à jour des mails à la base de données.")
+    print("Succès à l'ajout ou mise à jour des mails à la base de données.\n")
     connection.commit()
 
 # Ajouter les données de la ville au tableau ville
@@ -310,7 +309,7 @@ def push_ville(infosUser, connection, cursor):
                             """
                             cursor.execute(sql)
                             connection.commit()
-    print("Succès à l'ajout des villes à la base de données.")
+    print("Succès à l'ajout des villes à la base de données.\n")
     return villes
 
 # Ajouter des adresses dans la table adresse
@@ -410,7 +409,7 @@ def push_adresse(infosUser, connection, cursor):
                                 cursor.execute(sql)
 
                             connection.commit()
-    print("Succès à l'ajout ou mise à jour des adresses à la base de données.")
+    print("Succès à l'ajout ou mise à jour des adresses à la base de données.\n")
 
 # Ajouter les données des écoles dans la table ecole
 def push_ecoles(infosDiploma, connection, cursor):
@@ -460,7 +459,7 @@ def push_ecoles(infosDiploma, connection, cursor):
                     connection.commit()
 
                     ecoles.append(nom_ecole)
-    print("Succès de l'ajout des écoles à la base de données.")
+    print("Succès de l'ajout des écoles à la base de données.\n")
 
 
 # Ajouter les données des personnes dans la table personne
@@ -546,7 +545,7 @@ def push_personne(infosUser, connection, cursor):
             
             connection.commit()
 
-    print("Succès de l'ajout ou mise à jour des personnes dans la base de données.")
+    print("Succès de l'ajout ou mise à jour des personnes dans la base de données.\n")
 
 # Ajouter les données des diplômes à la table diplome
 def push_diplome(infosDiploma, connection, cursor):
@@ -617,7 +616,7 @@ def push_diplome(infosDiploma, connection, cursor):
                         connection.commit()
 
                         diplomes.append(nom_diplome)
-    print("Succès à l'ajout des diplômes à la base de données.")
+    print("Succès à l'ajout des diplômes à la base de données.\n")
 
 # Ajouter ou mettre à jour des liens entre diplômes et personnes via a_un_diplome
 def push_a_un_diplome(infosDiploma, connection, cursor):
@@ -694,43 +693,44 @@ def push_a_un_diplome(infosDiploma, connection, cursor):
                     cursor.execute(sql)
                     connection.commit()
 
-    print("Succès à l'ajout ou mise à jour des liens diplômes/personnes dans la base de données.")
+    print("Succès à l'ajout ou mise à jour des liens diplômes/personnes dans la base de données.\n")
 
-#%% 
 # Charger les données depuis l'API
+print("Chargement des données depuis l'API...")
+print("(Cette opération peut prendre quelques minutes)")
 
 # Active les appels asynchrones aux requêtes API
-import nest_asyncio
 nest_asyncio.apply()
 
 # Démarre le chronomètre
-start_time = datetime.now()
+start_time_api = datetime.now()
 
 # Charge les données nécessaires depuis l'API
 infosDiploma = asyncio.run(fetchData_async("diploma"))
 infosUser = asyncio.run(fetchData_async("profile"))
 
 # Informe la durée totale de récupération des données
-end_time = datetime.now()
-print("Durée de récupération des données de l'API : {}".format(end_time - start_time))
+end_time_api = datetime.now()
+print("\nDurée de récupération des données de l'API : {}".format(end_time_api - start_time_api))
 
-#%% 
 # Insérer les données dans la base de données
+print("\n------------------------------------------------\n")
+print("Insertion des données dans la base de données...\n")
 
 # Établit la connexion avec la base de données
 connection, cursor = init()
 
 # Démarre le chronomètre
-start_time = datetime.now()
+start_time_database = datetime.now()
 
-# Remplit les tables specialisation et type_utilisateur
-push_specialisation(infosDiploma, connection, cursor)
+# Remplit les tables de type
 push_type_utilisateur(infosUser, connection, cursor)
-
-# Remplit les tables type et mail (doit être fait dans cet ordre)
 types = []
 types = push_type_mail(infosUser, connection, cursor, types)
 types = push_type_adress(infosUser, connection, cursor, types)
+
+# Remplit les tables specialisation et mail
+push_specialisation(infosDiploma, connection, cursor)
 push_mail(infosUser, connection, cursor, types)
 
 # Remplit les tables ville, personne, adresse, ecole, diplome et a_un_diplome
@@ -745,7 +745,9 @@ push_a_un_diplome(infosDiploma, connection, cursor)
 cursor.close()
 
 # Mesure le temps nécessaire pour insérer les données dans la base de données
-end_time = datetime.now()
-print('Durée de la mise à jour de la base de données : {}'.format(end_time - start_time))
+end_time_database = datetime.now()
+print("\n------------------------------------------------\n")
+print('Durée de la mise à jour de la base de données : {}'.format(end_time_database - start_time_database))
 
-# %%
+# Mesure le temps total nécéssaire
+print('Durée totale du script : {}'.format(end_time_database - start_time_api) + '\n')
