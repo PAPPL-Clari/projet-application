@@ -110,7 +110,7 @@ CREATE TABLE public.a_un_diplome (
     id_diplome INTEGER NOT NULL,
     id_personne INTEGER NOT NULL,
     date_diplomation DATE,
-    date_integration DATE NOT NULL,
+    date_integration DATE,
     est_diplome BOOLEAN NOT NULL,
     CONSTRAINT a_un_diplome_pk PRIMARY KEY (id_diplome, id_personne),
     CONSTRAINT diplome_a_un_diplome_fk FOREIGN KEY (id_diplome) REFERENCES public.diplome (id_diplome),

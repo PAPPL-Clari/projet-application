@@ -594,6 +594,11 @@ def push_diplome(infosDiploma, connection, cursor):
                     cursor.execute(check_sql)
                     result_spec = cursor.fetchone()
 
+                    if result_spec:
+                        id_specialisation = result_spec[0]
+                    else:
+                        id_specialisation = 'NULL'
+
                     # Recherche l'ID pour l'école
                     check_sql = f"""
                     SELECT id_ecole FROM ecole WHERE nom_ecole = {nom_ecole};
@@ -601,8 +606,7 @@ def push_diplome(infosDiploma, connection, cursor):
                     cursor.execute(check_sql)
                     result_ecole = cursor.fetchone()
 
-                    if not result and result_spec and result_ecole:  # Insère uniquement s'il n'existe pas
-                        id_specialisation = result_spec[0]
+                    if not result and result_ecole:  # Insère uniquement s'il n'existe pas
                         id_ecole = result_ecole[0]
                         sql = f"""
                                 INSERT INTO diplome (ref_diploma, id_specialisation, id_ecole, 
@@ -645,7 +649,10 @@ def push_a_un_diplome(infosDiploma, connection, cursor):
                     dateDiplomation = 'NULL'
                 
                 dateIntegration = DiplomaInfo[i]["dateIntegration"]
-                dateIntegration = format_str(dateIntegration)
+                if dateIntegration != '':
+                    dateIntegration = format_str(dateIntegration)
+                else:
+                    dateIntegration = 'NULL'
 
                 # Vérifie si le diplôme existe
                 check_sql = f"""
