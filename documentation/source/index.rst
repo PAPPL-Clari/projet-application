@@ -15,8 +15,6 @@ documentation for details.
    :maxdepth: 2
    :caption: Modules:
 
-   databasePush
-   test_format
    extractInfo/fetchData
    extractInfo/format
    extractInfo/getAdressesInfo
