@@ -1,6 +1,10 @@
-#entry result: partie du resultat que contient que les infos de mail de la personne
-#return infoMail: dictionary avec les informations de mail
 def getMailsInfo(result):
+    """
+    Faire l'extraction des informations d'adresse postal de la personne.
+
+    :param result: Une chaîne au format JSON qui contient les informations de mail de la personne
+    :return infoMail: Dictionnaire python avec les infos du type d'adresse mail et le l'adresse mail lui même
+    """
     infoMail = dict()
 
     for mail in result:

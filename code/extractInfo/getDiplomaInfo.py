@@ -1,7 +1,12 @@
-#txt: entree du type json pour extraire les infos pertinentes de la personne
-#return: liste composé des dictionnaires qui contient les informations de chaque diplome 
-#de l'individu: id, ref, nom du diplome, parcours, specialisation, nom ecole, pays ecole
 def getDiplomaInfo(result):
+    """
+    Faire l'extraction des informations de diplôme de la personne.
+
+    :param result: Une chaîne au format JSON avec tous les informations de diplome.
+    :return infosDiplomation: Dictionnaire python avec les infos de la reference diplôme, le nom du diplôme, le parcours,
+    le nom de la specialisation, le nom de l'école, l'acronyme de pays de l'école, la date d'intégration,
+    la date de diplomation et la donnée si l'étudiant est diplômé ou pas.
+    """
     infosDiplomation = []
 
     listeDiplomes = result["_embedded"]["diplomas"]

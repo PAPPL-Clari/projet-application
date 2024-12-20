@@ -1,8 +1,10 @@
-#txt: entree du type json pour extraire les infos de adresse de la personne
-#return: dictionary avec les infos d'adresse, ville, code postal, pays 
-#et NPAI (n'habite pas à l'adresse indiqué)
-
 def getAdressesInfo(result):
+    """
+    Faire l'extraction des informations d'adresse postal de la personne.
+
+    :param result: Une chaîne au format JSON
+    :return infoAdresse: Dictionnaire python avec les infos des quatre lignes d'adresse, ville, code postal, pays, npai
+    """
     infoAddresse = dict()
     coordonnees = dict()
 

@@ -7,8 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('./extractInfo'))
+sys.path.insert(0, os.path.abspath('../../code'))  
 
 project = 'Projet Application - Centrale Alumni'
 copyright = '2024, Larissa ALBUQUERQUE, Clara MATTOS MEDEIROS'
@@ -24,8 +23,13 @@ extensions = [
     ]
 
 templates_path = ['_templates']
-exclude_patterns = []
-
+exclude_patterns = ['venv', 'env', '**/tests', '**/__pycache__']
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": False,  # Não mostre funções sem docstrings
+    "private-members": False,  # Ignore membros privados (começando com _)
+    "special-members": False,  # Ignore métodos como __init__
+}
 language = 'fr'
 
 # -- Options for HTML output -------------------------------------------------

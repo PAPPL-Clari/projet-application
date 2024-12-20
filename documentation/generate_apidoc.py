@@ -1,5 +1,5 @@
 import os
-from sphinx.ext.apidoc import main as sphinx_apidoc
+from sphinx.ext.apidoc import main
 import subprocess
 import sys
 
@@ -21,8 +21,14 @@ command = [
 ]
 
 # Executar o comando
-try:
+try:  
+    # Gerar documentação .rst apenas para o seu código
+    main(["-o", output_dir, source_dir, "--force", "--no-toc", "--separate"])
     subprocess.run(command, check=True)
     print(f"Arquivos .rst gerados com sucesso em {output_dir}")
 except Exception as e:
     print(f"Erro ao gerar os arquivos .rst: {e}")
+
+
+
+
