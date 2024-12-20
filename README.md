@@ -68,7 +68,7 @@ git clone https://github.com/PAPPL-Clari/projet-application.git
    ```  
 
 ### 5. Configurer le fichier `config.py`  
-Dans le répertoire `code`, créez un fichier nommé `config.py` avec le contenu suivant :  
+Dans le répertoire `code`, créez un fichier Python nommé `config.py` avec le contenu suivant :  
 ```python  
 secret = 'votre_secret_pour_l_api'  
 key = 'votre_clé_pour_l_api'  
