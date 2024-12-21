@@ -13,12 +13,6 @@ documentation for details.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Modules:
+   :caption: Contents:
 
-   extractInfo/fetchData
-   extractInfo/format
-   extractInfo/getAdressesInfo
-   extractInfo/getDiplomasInfo
-   extractInfo/getMailsInfo
-   extractInfo/getPersonneInfo
-   extractInfo/getUtilisateurInfo
+   modules

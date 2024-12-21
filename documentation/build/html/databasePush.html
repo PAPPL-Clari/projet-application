@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+
+<html lang="fr" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>databasePush module &#8212; Documentation Projet Application - Centrale Alumni 1.0</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=7a28dfa3"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=e6b791cb"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Recherche" href="search.html" />
+    <link rel="next" title="test_format module" href="test_format.html" />
+    <link rel="prev" title="config module" href="config.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-databasePush">
+<span id="databasepush-module"></span><h1>databasePush module<a class="headerlink" href="#module-databasePush" title="Lien vers cette rubrique">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="databasePush.datetime">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">datetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">month</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">day</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">hour</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">minute</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">second</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">microsecond</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">tzinfo</span></span></em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/datetime.html#datetime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.datetime" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Bases : <a class="reference internal" href="#databasePush.datetime.date" title="databasePush.datetime.date"><code class="xref py py-class docutils literal notranslate"><span class="pre">date</span></code></a></p>
+<p>The year, month and day arguments are required. tzinfo may be None, or an
+instance of a tzinfo subclass. The remaining arguments may be ints.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.astimezone">
+<span class="sig-name descname"><span class="pre">astimezone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.astimezone" title="Lien vers cette définition">¶</a></dt>
+<dd><p>tz -&gt; convert to local time in new timezone tz</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.combine">
+<span class="sig-name descname"><span class="pre">combine</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.combine" title="Lien vers cette définition">¶</a></dt>
+<dd><p>date, time -&gt; datetime with same date and time fields</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.ctime">
+<span class="sig-name descname"><span class="pre">ctime</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.ctime" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return ctime() style string.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.date">
+<span class="sig-name descname"><span class="pre">date</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.date" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return date object with same year, month and day.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.dst">
+<span class="sig-name descname"><span class="pre">dst</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.dst" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return self.tzinfo.dst(self).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.fold">
+<span class="sig-name descname"><span class="pre">fold</span></span><a class="headerlink" href="#databasePush.datetime.fold" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.fromisoformat">
+<span class="sig-name descname"><span class="pre">fromisoformat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.fromisoformat" title="Lien vers cette définition">¶</a></dt>
+<dd><p>string -&gt; datetime from a string in most ISO 8601 formats</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.fromtimestamp">
+<span class="sig-name descname"><span class="pre">fromtimestamp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.fromtimestamp" title="Lien vers cette définition">¶</a></dt>
+<dd><p>timestamp[, tz] -&gt; tz’s local time from POSIX timestamp.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.hour">
+<span class="sig-name descname"><span class="pre">hour</span></span><a class="headerlink" href="#databasePush.datetime.hour" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.isoformat">
+<span class="sig-name descname"><span class="pre">isoformat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.isoformat" title="Lien vers cette définition">¶</a></dt>
+<dd><p>[sep] -&gt; string in ISO 8601 format, YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].
+sep is used to separate the year from the time, and defaults to “T”.
+The optional argument timespec specifies the number of additional terms
+of the time to include. Valid options are “auto”, “hours”, “minutes”,
+“seconds”, “milliseconds” and “microseconds”.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.max">
+<span class="sig-name descname"><span class="pre">max</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.datetime(9999,</span> <span class="pre">12,</span> <span class="pre">31,</span> <span class="pre">23,</span> <span class="pre">59,</span> <span class="pre">59,</span> <span class="pre">999999)</span></em><a class="headerlink" href="#databasePush.datetime.max" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.microsecond">
+<span class="sig-name descname"><span class="pre">microsecond</span></span><a class="headerlink" href="#databasePush.datetime.microsecond" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.min">
+<span class="sig-name descname"><span class="pre">min</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.datetime(1,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">0,</span> <span class="pre">0)</span></em><a class="headerlink" href="#databasePush.datetime.min" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.minute">
+<span class="sig-name descname"><span class="pre">minute</span></span><a class="headerlink" href="#databasePush.datetime.minute" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.now">
+<span class="sig-name descname"><span class="pre">now</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.now" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Returns new datetime object representing current time local to tz.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>tz</dt><dd><p>Timezone object.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>If no tz is specified, uses local timezone.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.replace">
+<span class="sig-name descname"><span class="pre">replace</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.replace" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return datetime with new specified fields.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.resolution">
+<span class="sig-name descname"><span class="pre">resolution</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.timedelta(microseconds=1)</span></em><a class="headerlink" href="#databasePush.datetime.resolution" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.second">
+<span class="sig-name descname"><span class="pre">second</span></span><a class="headerlink" href="#databasePush.datetime.second" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.strptime">
+<span class="sig-name descname"><span class="pre">strptime</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.strptime" title="Lien vers cette définition">¶</a></dt>
+<dd><p>string, format -&gt; new datetime parsed from a string (like time.strptime()).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.time">
+<span class="sig-name descname"><span class="pre">time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.time" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return time object with same time but with tzinfo=None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.timestamp">
+<span class="sig-name descname"><span class="pre">timestamp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.timestamp" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return POSIX timestamp as float.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.timetuple">
+<span class="sig-name descname"><span class="pre">timetuple</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.timetuple" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return time tuple, compatible with time.localtime().</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.timetz">
+<span class="sig-name descname"><span class="pre">timetz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.timetz" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return time object with same time and tzinfo.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="databasePush.datetime.tzinfo">
+<span class="sig-name descname"><span class="pre">tzinfo</span></span><a class="headerlink" href="#databasePush.datetime.tzinfo" title="Lien vers cette définition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.tzname">
+<span class="sig-name descname"><span class="pre">tzname</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.tzname" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return self.tzinfo.tzname(self).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.utcfromtimestamp">
+<span class="sig-name descname"><span class="pre">utcfromtimestamp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.utcfromtimestamp" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Construct a naive UTC datetime from a POSIX timestamp.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.utcnow">
+<span class="sig-name descname"><span class="pre">utcnow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.utcnow" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return a new datetime representing UTC day and time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.utcoffset">
+<span class="sig-name descname"><span class="pre">utcoffset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.utcoffset" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return self.tzinfo.utcoffset(self).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="databasePush.datetime.utctimetuple">
+<span class="sig-name descname"><span class="pre">utctimetuple</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#databasePush.datetime.utctimetuple" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Return UTC time tuple, compatible with time.localtime().</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.fetchData_async">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">fetchData_async</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/fetchData.html#fetchData_async"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.fetchData_async" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Récupère les données asynchrones depuis l’API CNA en fonction du type spécifié.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>type</strong> – Type de données à récupérer (« diploma » ou « profile »)</p>
+</dd>
+<dt class="field-even">Renvoie<span class="colon">:</span></dt>
+<dd class="field-even"><p>Liste de résultats extraits de l’API</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.format_adress">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">format_adress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adress</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/format.html#format_adress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.format_adress" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Formate les adresses afin de s’adapter à 128 caractères.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>adress</strong> – Une chaîne de caractères</p>
+</dd>
+<dt class="field-even">Renvoie<span class="colon">:</span></dt>
+<dd class="field-even"><p>adress: Chaîne de caractères limitée à 128 caractères</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.format_code_postal">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">format_code_postal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/format.html#format_code_postal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.format_code_postal" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Formate le code postal afin de normaliser les données.
+Vérifie s’il s’agit d’un entier, sinon il le définit à zéro.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>code</strong> – Un code postal au format chaîne de caractères</p>
+</dd>
+<dt class="field-even">Renvoie<span class="colon">:</span></dt>
+<dd class="field-even"><p>code modifié</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.format_name">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">format_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">city_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/format.html#format_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.format_name" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Formate les noms afin de normaliser les données.
+Supprime les caractères spéciaux, les tirets et remplace les simples guillemets “” par des doubles.
+Met chaque première lettre d’un mot en majuscule et les autres en minuscule.
+Ex : SUCE-SUR-ERDRE devient Suce Sur Erdre</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>city_name</strong> – Une chaîne de caractères</p>
+</dd>
+<dt class="field-even">Renvoie<span class="colon">:</span></dt>
+<dd class="field-even"><p>normalized_name: Chaîne de caractères normalisée</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.format_str">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">format_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/format.html#format_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.format_str" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Formate une chaîne afin d’éviter les erreurs dans les requêtes SQL.
+Supprime les caractères spéciaux, remplace les guillemets simples par des doubles “ -&gt; “”
+et ajoute un guillemet initial et final à la chaîne.
+Ex : Côte d’Ivoire -&gt; “Cote d””Ivoire”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>str</strong> – Une chaîne de caractères</p>
+</dd>
+<dt class="field-even">Renvoie<span class="colon">:</span></dt>
+<dd class="field-even"><p>str: Chaîne modifiée</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.getAdressesInfo">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">getAdressesInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/getAdressesInfo.html#getAdressesInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.getAdressesInfo" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Faire l’extraction des informations d’adresse postal de la personne.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>result</strong> – Une chaîne au format JSON</p>
+</dd>
+<dt class="field-even">Return infoAdresse<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionnaire python avec les infos des quatre lignes d’adresse, ville, code postal, pays, npai</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.getDiplomaInfo">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">getDiplomaInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/getDiplomaInfo.html#getDiplomaInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.getDiplomaInfo" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Faire l’extraction des informations de diplôme de la personne.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>result</strong> – Une chaîne au format JSON avec tous les informations de diplome.</p>
+</dd>
+<dt class="field-even">Return infosDiplomation<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionnaire python avec les infos de la reference diplôme, le nom du diplôme, le parcours,</p>
+</dd>
+</dl>
+<p>le nom de la specialisation, le nom de l’école, l’acronyme de pays de l’école, la date d’intégration,
+la date de diplomation et la donnée si l’étudiant est diplômé ou pas.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.getMailsInfo">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">getMailsInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/getMailsInfo.html#getMailsInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.getMailsInfo" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Faire l’extraction des informations d’adresse postal de la personne.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>result</strong> – Une chaîne au format JSON qui contient les informations de mail de la personne</p>
+</dd>
+<dt class="field-even">Return infoMail<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionnaire python avec les infos du type d’adresse mail et le l’adresse mail lui même</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.getPersonneInfo">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">getPersonneInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/getPersonneInfo.html#getPersonneInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.getPersonneInfo" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Faire l’extraction des informations de civilité de la personne.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>result</strong> – Une chaîne au format JSON</p>
+</dd>
+<dt class="field-even">Return infosPersonnelles<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionnaire python avec les infos de la personne: nom, prénom, nom d’usage, id,</p>
+</dd>
+</dl>
+<p>school_ref, date de Naissance, nationalité, ville, date de la dernière modification,
+type d’utilisateur et son adresse mail.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.getUtilisateurInfo">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">getUtilisateurInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/extractInfo/getUtilisateurInfo.html#getUtilisateurInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.getUtilisateurInfo" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Faire l’extraction des informations d’adresse postal de la personne.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>result</strong> – Une chaîne au format JSON avec tous les informations personnelles.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>String avec le type d’utilisateur: Staff, Diplomé, Membre externe, Enseignant ou Personnel, Étudiant ou Membre associé.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.init">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.init" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Ouvre une nouvelle connexion avec la base de données locale.</p>
+<p>:param : None
+:return : connection : un objet de connexion à la base de données
+:return : cursor : curseur de la connexion</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_a_un_diplome">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_a_un_diplome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosDiploma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_a_un_diplome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_a_un_diplome" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Relie la table diplome à la table personne via la table a_un_diplome.
+Vérifie la duplication des données, ajoute les nouveaux liens,
+et met à jour les données existantes si nécessaire.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>infosDiploma</strong> – Liste de toutes les informations sur les diplômes de l’API</p></li>
+<li><p><strong>connection</strong> – Objet de connexion à la base de données</p></li>
+<li><p><strong>cursor</strong> – Objet curseur de la connexion à la base de données</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_adresse">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_adresse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosUser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_adresse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_adresse" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère toutes les adresses dans la table “adresse”.
+Vérifie les doublons de données et ajoute l’adresse principale (adresse 1) si elle n’existe pas.
+Met à jour les données existantes si nécessaire.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>infosUser</strong> – Liste contenant toutes les informations des utilisateurs provenant de l’API.</p></li>
+<li><p><strong>connection</strong> – Objet de connexion à la base de données.</p></li>
+<li><p><strong>cursor</strong> – Objet curseur pour exécuter les requêtes SQL.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return list_adresses<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tableau contenant toutes les adresses sauvegardées dans la base de données (adresse 1 à 4).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_diplome">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_diplome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosDiploma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_diplome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_diplome" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère tous les diplômes dans la table diplome.
+Vérifie la duplication des données et ajoute si le diplôme n’existe pas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>infosDiploma</strong> – Liste de toutes les informations sur les diplômes de l’API</p></li>
+<li><p><strong>connection</strong> – Objet de connexion à la base de données</p></li>
+<li><p><strong>cursor</strong> – Objet curseur de la connexion à la base de données</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_ecoles">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_ecoles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosDiploma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_ecoles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_ecoles" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère toutes les écoles dans la table “ecole”.
+Vérifie les doublons de données et ajoute si l’école n’existe pas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>infosDiploma</strong> – Liste contenant toutes les informations des diplômes depuis l’API.</p></li>
+<li><p><strong>connection</strong> – Objet de connexion à la base de données.</p></li>
+<li><p><strong>cursor</strong> – Objet curseur pour exécuter les requêtes SQL.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_mail">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_mail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosUser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_mail"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_mail" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère toutes les adresses électroniques dans la table mail.
+Vérifie la duplicité des données et ajoute si le type n’existe pas.
+Met à jour les données existantes si nécessaire.</p>
+<p>:param infosUser : Liste de toutes les infos des utilisateurs dans l’API
+:param connection : Objet de connexion à la base de données
+:param cursor : Objet curseur de la connexion à la base de données
+:param types : Liste des types existants dans la base de données</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_personne">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_personne</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosUser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_personne"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_personne" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère ou met à jour les personnes dans la table “personne”.
+Vérifie les doublons de données, ajoute les nouvelles personnes,
+et met à jour les données existantes si nécessaire.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Paramètres<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>infosUser</strong> – Liste contenant toutes les informations des utilisateurs depuis l’API.</p></li>
+<li><p><strong>connection</strong> – Objet de connexion à la base de données.</p></li>
+<li><p><strong>cursor</strong> – Objet curseur pour exécuter les requêtes SQL.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_specialisation">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_specialisation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosDiploma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_specialisation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_specialisation" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère toutes les spécialisations dans la table « spécialisation ».
+Vérifie la duplicité des données et ajoute si la spécialisation n’existe pas.</p>
+<p>:param infosDiplôme : Liste de toutes les informations relatives aux diplômes dans l’API
+:param connection : Objet de connexion à la base de données
+:param cursor : Objet curseur de la connexion à la base de données</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_type_adress">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_type_adress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosUser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_type_adress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_type_adress" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère tous les types d’adresses dans la table type.
+Vérifie la duplicité des données et ajoute si le type n’existe pas.</p>
+<p>param infosUser : Liste de toutes les informations sur les utilisateurs dans l’API
+:param connection : Objet de connexion à la base de données
+:param cursor : Objet curseur de la connexion à la base de données
+:param types : tableau liste des types déjà existants dans la base de données
+:return types : tableau liste des types sauvegardés dans la base de données</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_type_mail">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_type_mail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosUser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_type_mail"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_type_mail" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère tous les types d’emails dans la table type.
+Vérifie la duplicité des données et ajoute si le type n’existe pas.</p>
+<p>param infosUser : Liste de toutes les informations sur les utilisateurs dans l’API
+:param connection : Objet de connexion à la base de données
+:param cursor : Objet curseur de la connexion à la base de données
+:param types : tableau liste des types déjà existants dans la base de données
+:return types : tableau liste des types sauvegardés dans la base de données</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_type_utilisateur">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_type_utilisateur</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosUser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_type_utilisateur"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_type_utilisateur" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insérer tous les types d’utilisateurs dans la table type_utilisateur.
+Vérifie la duplicité des données et ajoute si le type n’existe pas.</p>
+<p>param infosUser : Liste de toutes les infos des utilisateurs dans l’API
+:param connection : Objet de connexion à la base de données
+:param cursor : Objet curseur de la connexion à la base de données</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.push_ville">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">push_ville</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infosUser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/databasePush.html#push_ville"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#databasePush.push_ville" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Insère toutes les villes présentes dans l’API dans la table ville.
+Vérifie la duplicité des données et ajoute si la ville n’existe pas.</p>
+<p>param infosUser : Liste de toutes les informations sur les utilisateurs de l’API
+:param connection : Objet de connexion à la base de données
+:param cursor : Objet curseur de la connexion à la base de données
+:return villes : Liste des villes présentes dans la base de données</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="databasePush.unidecode">
+<span class="sig-prename descclassname"><span class="pre">databasePush.</span></span><span class="sig-name descname"><span class="pre">unidecode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ignore'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'?'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#databasePush.unidecode" title="Lien vers cette définition">¶</a></dt>
+<dd><p>Transliterate an Unicode object into an ASCII string</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">unidecode</span><span class="p">(</span><span class="s2">&quot;北亰&quot;</span><span class="p">)</span>
+<span class="go">&quot;Bei Jing &quot;</span>
+</pre></div>
+</div>
+<p>This function first tries to convert the string using ASCII codec.
+If it fails (because of non-ASCII characters), it falls back to
+transliteration using the character tables.</p>
+<p>This is approx. five times faster if the string only contains ASCII
+characters, but slightly slower than unicode_expect_nonascii if
+non-ASCII characters are present.</p>
+<p>errors specifies what to do with characters that have not been
+found in replacement tables. The default is “ignore” which ignores
+the character. “strict” raises an UnidecodeError. “replace”
+substitutes the character with replace_str (default is “?”).
+“preserve” keeps the original character.</p>
+<p>Note that if “preserve” is used the returned string might not be
+ASCII!</p>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Projet Application - Centrale Alumni</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">databasePush module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="test_format.html">test_format module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">code</a><ul>
+      <li>Previous: <a href="config.html" title="Chapitre précédent">config module</a></li>
+      <li>Next: <a href="test_format.html" title="Chapitre suivant">test_format module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Larissa ALBUQUERQUE, Clara MATTOS MEDEIROS.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/databasePush.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

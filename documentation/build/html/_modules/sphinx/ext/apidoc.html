@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+
+<html lang="fr" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sphinx.ext.apidoc &#8212; Documentation Projet Application - Centrale Alumni 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=7a28dfa3"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/translations.js?v=e6b791cb"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Code source de sphinx.ext.apidoc</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Creates reST files corresponding to Python modules for code documentation.</span>
+
+<span class="sd">Parses a directory tree looking for Python modules and packages and creates</span>
+<span class="sd">ReST files appropriately to create code documentation with Sphinx.  It also</span>
+<span class="sd">creates a modules index (named modules.&lt;suffix&gt;).</span>
+
+<span class="sd">This is derived from the &quot;sphinx-autopackage&quot; script, which is:</span>
+<span class="sd">Copyright 2008 Société des arts technologiques (SAT),</span>
+<span class="sd">https://sat.qc.ca/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">locale</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">importlib.machinery</span> <span class="kn">import</span> <span class="n">EXTENSION_SUFFIXES</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Protocol</span>
+
+<span class="kn">import</span> <span class="nn">sphinx.locale</span>
+<span class="kn">from</span> <span class="nn">sphinx</span> <span class="kn">import</span> <span class="n">__display_version__</span><span class="p">,</span> <span class="n">package_dir</span>
+<span class="kn">from</span> <span class="nn">sphinx.cmd.quickstart</span> <span class="kn">import</span> <span class="n">EXTENSIONS</span>
+<span class="kn">from</span> <span class="nn">sphinx.locale</span> <span class="kn">import</span> <span class="n">__</span>
+<span class="kn">from</span> <span class="nn">sphinx.util</span> <span class="kn">import</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">sphinx.util.osutil</span> <span class="kn">import</span> <span class="n">FileAvoidWrite</span><span class="p">,</span> <span class="n">ensuredir</span>
+<span class="kn">from</span> <span class="nn">sphinx.util.template</span> <span class="kn">import</span> <span class="n">ReSTRenderer</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># automodule options</span>
+<span class="k">if</span> <span class="s1">&#39;SPHINX_APIDOC_OPTIONS&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+    <span class="n">OPTIONS</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SPHINX_APIDOC_OPTIONS&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">OPTIONS</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;members&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;undoc-members&#39;</span><span class="p">,</span>
+        <span class="c1"># &#39;inherited-members&#39;, # disabled because there&#39;s a bug in sphinx</span>
+        <span class="s1">&#39;show-inheritance&#39;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+<span class="n">PY_SUFFIXES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;.py&#39;</span><span class="p">,</span> <span class="s1">&#39;.pyx&#39;</span><span class="p">,</span> <span class="o">*</span><span class="nb">tuple</span><span class="p">(</span><span class="n">EXTENSION_SUFFIXES</span><span class="p">))</span>
+
+<span class="n">template_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">package_dir</span><span class="p">,</span> <span class="s1">&#39;templates&#39;</span><span class="p">,</span> <span class="s1">&#39;apidoc&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">is_initpy</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check *filename* is __init__ file or not.&quot;&quot;&quot;</span>
+    <span class="n">basename</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="n">basename</span> <span class="o">==</span> <span class="s1">&#39;__init__&#39;</span> <span class="o">+</span> <span class="n">suffix</span>
+        <span class="k">for</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">PY_SUFFIXES</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">module_join</span><span class="p">(</span><span class="o">*</span><span class="n">modnames</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Join module names with dots.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">modnames</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">is_packagedir</span><span class="p">(</span><span class="n">dirname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check given *files* contains __init__ file.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">files</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dirname</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">files</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">is_initpy</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">write_file</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write the output file for module/package &lt;name&gt;.&quot;&quot;&quot;</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">destdir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">.</span><span class="si">{</span><span class="n">opts</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">dryrun</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">quiet</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;Would create file </span><span class="si">%s</span><span class="s1">.&#39;</span><span class="p">),</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fname</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">force</span> <span class="ow">and</span> <span class="n">fname</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">quiet</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;File </span><span class="si">%s</span><span class="s1"> already exists, skipping.&#39;</span><span class="p">),</span> <span class="n">fname</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">quiet</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;Creating file </span><span class="si">%s</span><span class="s1">.&#39;</span><span class="p">),</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">FileAvoidWrite</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fname</span>
+
+
+<span class="k">def</span> <span class="nf">create_module_file</span><span class="p">(</span>
+    <span class="n">package</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">basename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span><span class="p">,</span>
+    <span class="n">user_template_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the text of the file and write the file.&quot;&quot;&quot;</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">OPTIONS</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">includeprivate</span> <span class="ow">and</span> <span class="s1">&#39;private-members&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+        <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;private-members&#39;</span><span class="p">)</span>
+
+    <span class="n">qualname</span> <span class="o">=</span> <span class="n">module_join</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="n">basename</span><span class="p">)</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;show_headings&#39;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">noheadings</span><span class="p">,</span>
+        <span class="s1">&#39;basename&#39;</span><span class="p">:</span> <span class="n">basename</span><span class="p">,</span>
+        <span class="s1">&#39;qualname&#39;</span><span class="p">:</span> <span class="n">qualname</span><span class="p">,</span>
+        <span class="s1">&#39;automodule_options&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">user_template_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">template_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">user_template_dir</span><span class="p">,</span> <span class="n">template_dir</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">template_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">template_dir</span><span class="p">]</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">ReSTRenderer</span><span class="p">(</span><span class="n">template_path</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s1">&#39;module.rst.jinja&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">write_file</span><span class="p">(</span><span class="n">qualname</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">create_package_file</span><span class="p">(</span>
+    <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">master_package</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">subroot</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">py_files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span><span class="p">,</span>
+    <span class="n">subs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">is_namespace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">excludes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">user_template_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the text of the file and write the file.</span>
+
+<span class="sd">    Also create submodules if necessary.</span>
+
+<span class="sd">    :returns: list of written files</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># build a list of sub packages (directories containing an __init__ file)</span>
+    <span class="n">subpackages</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">module_join</span><span class="p">(</span><span class="n">master_package</span><span class="p">,</span> <span class="n">subroot</span><span class="p">,</span> <span class="n">pkgname</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">pkgname</span> <span class="ow">in</span> <span class="n">subs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_skipped_package</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">pkgname</span><span class="p">),</span> <span class="n">opts</span><span class="p">,</span> <span class="n">excludes</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="c1"># build a list of sub modules</span>
+    <span class="n">submodules</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">py_files</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_skipped_module</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">sub</span><span class="p">),</span> <span class="n">opts</span><span class="p">,</span> <span class="n">excludes</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_initpy</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">submodules</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">submodules</span><span class="p">))</span>
+    <span class="n">submodules</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">module_join</span><span class="p">(</span><span class="n">master_package</span><span class="p">,</span> <span class="n">subroot</span><span class="p">,</span> <span class="n">modname</span><span class="p">)</span> <span class="k">for</span> <span class="n">modname</span> <span class="ow">in</span> <span class="n">submodules</span>
+    <span class="p">]</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">OPTIONS</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">includeprivate</span> <span class="ow">and</span> <span class="s1">&#39;private-members&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+        <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;private-members&#39;</span><span class="p">)</span>
+
+    <span class="n">pkgname</span> <span class="o">=</span> <span class="n">module_join</span><span class="p">(</span><span class="n">master_package</span><span class="p">,</span> <span class="n">subroot</span><span class="p">)</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;pkgname&#39;</span><span class="p">:</span> <span class="n">pkgname</span><span class="p">,</span>
+        <span class="s1">&#39;subpackages&#39;</span><span class="p">:</span> <span class="n">subpackages</span><span class="p">,</span>
+        <span class="s1">&#39;submodules&#39;</span><span class="p">:</span> <span class="n">submodules</span><span class="p">,</span>
+        <span class="s1">&#39;is_namespace&#39;</span><span class="p">:</span> <span class="n">is_namespace</span><span class="p">,</span>
+        <span class="s1">&#39;modulefirst&#39;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">modulefirst</span><span class="p">,</span>
+        <span class="s1">&#39;separatemodules&#39;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">separatemodules</span><span class="p">,</span>
+        <span class="s1">&#39;automodule_options&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">,</span>
+        <span class="s1">&#39;show_headings&#39;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">noheadings</span><span class="p">,</span>
+        <span class="s1">&#39;maxdepth&#39;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">maxdepth</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">user_template_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">template_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">user_template_dir</span><span class="p">,</span> <span class="n">template_dir</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">template_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">template_dir</span><span class="p">]</span>
+
+    <span class="n">written</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="n">ReSTRenderer</span><span class="p">(</span><span class="n">template_path</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s1">&#39;package.rst.jinja&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+    <span class="n">written</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">write_file</span><span class="p">(</span><span class="n">pkgname</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">opts</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">submodules</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">separatemodules</span><span class="p">:</span>
+        <span class="n">written</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+            <span class="n">create_module_file</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">submodule</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">user_template_dir</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">submodule</span> <span class="ow">in</span> <span class="n">submodules</span>
+        <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">written</span>
+
+
+<span class="k">def</span> <span class="nf">create_modules_toc_file</span><span class="p">(</span>
+    <span class="n">modules</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;modules&#39;</span><span class="p">,</span>
+    <span class="n">user_template_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the module&#39;s index.&quot;&quot;&quot;</span>
+    <span class="n">modules</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">prev_module</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">modules</span><span class="o">.</span><span class="n">copy</span><span class="p">():</span>
+        <span class="c1"># look if the module is a subpackage and, if yes, ignore it</span>
+        <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prev_module</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">):</span>
+            <span class="n">modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prev_module</span> <span class="o">=</span> <span class="n">module</span>
+
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
+        <span class="s1">&#39;maxdepth&#39;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">maxdepth</span><span class="p">,</span>
+        <span class="s1">&#39;docnames&#39;</span><span class="p">:</span> <span class="n">modules</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">user_template_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">template_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">user_template_dir</span><span class="p">,</span> <span class="n">template_dir</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">template_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">template_dir</span><span class="p">]</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">ReSTRenderer</span><span class="p">(</span><span class="n">template_path</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s1">&#39;toc.rst.jinja&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">write_file</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">is_skipped_package</span><span class="p">(</span>
+    <span class="n">dirname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span><span class="p">,</span> <span class="n">excludes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if we want to skip this module.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;*.py&#39;</span><span class="p">)))</span>
+    <span class="n">regular_package</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">is_initpy</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">regular_package</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">implicit_namespaces</span><span class="p">:</span>
+        <span class="c1"># *dirname* is not both a regular package and an implicit namespace package</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="c1"># Check there is some showable module inside package</span>
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_excluded</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">f</span><span class="p">),</span> <span class="n">excludes</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">is_skipped_module</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span><span class="p">,</span> <span class="n">_excludes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if we want to skip this module.&quot;&quot;&quot;</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="c1"># skip if the file doesn&#39;t exist</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="c1"># skip if the module has a &quot;private&quot; name</span>
+    <span class="k">return</span> <span class="n">filename</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">includeprivate</span>
+
+
+<span class="k">def</span> <span class="nf">walk</span><span class="p">(</span>
+    <span class="n">rootpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">excludes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Walk through the directory and list files and subdirectories up.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">subs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">followlinks</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">followlinks</span><span class="p">):</span>
+        <span class="c1"># document only Python module files (that aren&#39;t excluded)</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">f</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span>
+            <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">PY_SUFFIXES</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_excluded</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">f</span><span class="p">),</span> <span class="n">excludes</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># remove hidden (&#39;.&#39;) and private (&#39;_&#39;) directories, as well as</span>
+        <span class="c1"># excluded dirs</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">includeprivate</span><span class="p">:</span>
+            <span class="n">exclude_prefixes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exclude_prefixes</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+        <span class="n">subs</span><span class="p">[:]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">sub</span>
+            <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">subs</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">sub</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">exclude_prefixes</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_excluded</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">sub</span><span class="p">),</span> <span class="n">excludes</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">yield</span> <span class="n">root</span><span class="p">,</span> <span class="n">subs</span><span class="p">,</span> <span class="n">files</span>
+
+
+<span class="k">def</span> <span class="nf">has_child_module</span><span class="p">(</span>
+    <span class="n">rootpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">excludes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check the given directory contains child module/s (at least one).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">files</span> <span class="k">for</span> <span class="n">_root</span><span class="p">,</span> <span class="n">_subs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">walk</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">excludes</span><span class="p">,</span> <span class="n">opts</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">recurse_tree</span><span class="p">(</span>
+    <span class="n">rootpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">excludes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">opts</span><span class="p">:</span> <span class="n">CliOptions</span><span class="p">,</span>
+    <span class="n">user_template_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Look for every file in the directory tree and create the corresponding</span>
+<span class="sd">    ReST files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check if the base directory is a package and get its name</span>
+    <span class="k">if</span> <span class="n">is_packagedir</span><span class="p">(</span><span class="n">rootpath</span><span class="p">)</span> <span class="ow">or</span> <span class="n">opts</span><span class="o">.</span><span class="n">implicit_namespaces</span><span class="p">:</span>
+        <span class="n">root_package</span> <span class="o">=</span> <span class="n">rootpath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># otherwise, the base is a directory with packages</span>
+        <span class="n">root_package</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">toplevels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">written_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">subs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">walk</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">excludes</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="n">is_pkg</span> <span class="o">=</span> <span class="n">is_packagedir</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+        <span class="n">is_namespace</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">is_pkg</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">implicit_namespaces</span>
+        <span class="k">if</span> <span class="n">is_pkg</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="o">.</span><span class="n">copy</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">is_initpy</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                    <span class="n">files</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                    <span class="n">files</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">root</span> <span class="o">!=</span> <span class="n">rootpath</span><span class="p">:</span>
+            <span class="c1"># only accept non-package at toplevel unless using implicit namespaces</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">implicit_namespaces</span><span class="p">:</span>
+                <span class="n">subs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">is_pkg</span> <span class="ow">or</span> <span class="n">is_namespace</span><span class="p">:</span>
+            <span class="c1"># we are in a package with something to document</span>
+            <span class="k">if</span> <span class="n">subs</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">is_skipped_package</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+                <span class="n">subpackage</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">root</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">rootpath</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="c1"># if this is not a namespace or</span>
+                <span class="c1"># a namespace and there is something there to document</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_namespace</span> <span class="ow">or</span> <span class="n">has_child_module</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">excludes</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+                    <span class="n">written_files</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                        <span class="n">create_package_file</span><span class="p">(</span>
+                            <span class="n">root</span><span class="p">,</span>
+                            <span class="n">root_package</span><span class="p">,</span>
+                            <span class="n">subpackage</span><span class="p">,</span>
+                            <span class="n">files</span><span class="p">,</span>
+                            <span class="n">opts</span><span class="p">,</span>
+                            <span class="n">subs</span><span class="p">,</span>
+                            <span class="n">is_namespace</span><span class="p">,</span>
+                            <span class="n">excludes</span><span class="p">,</span>
+                            <span class="n">user_template_dir</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">toplevels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module_join</span><span class="p">(</span><span class="n">root_package</span><span class="p">,</span> <span class="n">subpackage</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if we are at the root level, we don&#39;t require it to be a package</span>
+            <span class="k">assert</span> <span class="n">root</span> <span class="o">==</span> <span class="n">rootpath</span>
+            <span class="k">assert</span> <span class="n">root_package</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">py_file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_skipped_module</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">py_file</span><span class="p">),</span> <span class="n">opts</span><span class="p">,</span> <span class="n">excludes</span><span class="p">):</span>
+                    <span class="n">module</span> <span class="o">=</span> <span class="n">py_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">written_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">create_module_file</span><span class="p">(</span>
+                            <span class="n">root_package</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">user_template_dir</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">toplevels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">written_files</span><span class="p">,</span> <span class="n">toplevels</span>
+
+
+<span class="k">def</span> <span class="nf">is_excluded</span><span class="p">(</span><span class="n">root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">excludes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the directory is in the exclude list.</span>
+
+<span class="sd">    Note: by having trailing slashes, we avoid common prefix issues, like</span>
+<span class="sd">          e.g. an exclude &quot;foo&quot; also accidentally excluding &quot;foobar&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">root_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">exclude</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">root_str</span><span class="p">)</span> <span class="k">for</span> <span class="n">exclude</span> <span class="ow">in</span> <span class="n">excludes</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_parser</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">usage</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(prog)s</span><span class="s1"> [OPTIONS] -o &lt;OUTPUT_PATH&gt; &lt;MODULE_PATH&gt; [EXCLUDE_PATTERN, ...]&#39;</span><span class="p">,</span>
+        <span class="n">epilog</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;For more information, visit &lt;https://www.sphinx-doc.org/&gt;.&#39;</span><span class="p">),</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Look recursively in &lt;MODULE_PATH&gt; for Python modules and packages and create</span>
+<span class="s2">one reST file with automodule directives per package in the &lt;OUTPUT_PATH&gt;.</span>
+
+<span class="s2">The &lt;EXCLUDE_PATTERN&gt;s can be file and/or directory patterns that will be</span>
+<span class="s2">excluded from generation.</span>
+
+<span class="s2">Note: By default this script will not overwrite already created files.&quot;&quot;&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--version&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;version&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;show_version&#39;</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%%</span><span class="s1">(prog)s </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">__display_version__</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;module_path&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;path to module to document&#39;</span><span class="p">))</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;exclude_pattern&#39;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span>
+            <span class="s1">&#39;fnmatch-style file and/or directory patterns to exclude from generation&#39;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-o&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;destdir&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;directory to place all output&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-q&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;quiet&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;no output on stdout, just warnings on stderr&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-d&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--maxdepth&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;maxdepth&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;maximum depth of submodules to show in the TOC (default: 4)&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-f&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--force&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;force&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;overwrite existing files&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-l&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--follow-links&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;followlinks&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span>
+            <span class="s1">&#39;follow symbolic links. Powerful when combined with collective.recipe.omelette.&#39;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-n&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--dry-run&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;dryrun&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;run the script without creating files&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-e&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--separate&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;separatemodules&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;put documentation for each module on its own page&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-P&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--private&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;includeprivate&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;include &quot;_private&quot; modules&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--tocfile&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;tocfile&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;modules&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;filename of table of contents (default: modules)&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-T&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--no-toc&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_false&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;tocfile&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s2">&quot;don&#39;t create a table of contents file&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-E&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--no-headings&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;noheadings&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span>
+            <span class="s2">&quot;don&#39;t create headings for the module/package &quot;</span>
+            <span class="s1">&#39;packages (e.g. when the docstrings already &#39;</span>
+            <span class="s1">&#39;contain them)&#39;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-M&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--module-first&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;modulefirst&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;put module documentation before submodule documentation&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--implicit-namespaces&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;implicit_namespaces&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span>
+            <span class="s1">&#39;interpret module paths according to PEP-0420 implicit namespaces specification&#39;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-s&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--suffix&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;suffix&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;rst&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;file suffix (default: rst)&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">exclusive_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_mutually_exclusive_group</span><span class="p">()</span>
+    <span class="n">exclusive_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--remove-old&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;remove_old&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span>
+            <span class="s1">&#39;Remove existing files in the output directory that were not generated&#39;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">exclusive_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-F&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--full&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;generate a full project with sphinx-quickstart&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-a&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--append-syspath&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;append_syspath&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;append module_path to sys.path, used when --full is given&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-H&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--doc-project&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;header&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;project name (default: root module name)&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-A&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--doc-author&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;author&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;project author(s), used when --full is given&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-V&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--doc-version&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;version&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;project version, used when --full is given&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-R&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--doc-release&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;release&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span>
+            <span class="s1">&#39;project release, used when --full is given, defaults to --doc-version&#39;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;extension options&#39;</span><span class="p">))</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--extensions&#39;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;EXTENSIONS&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;extensions&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;enable arbitrary extensions&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">EXTENSIONS</span><span class="p">:</span>
+        <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s1">&#39;--ext-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ext</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;append_const&#39;</span><span class="p">,</span>
+            <span class="n">const</span><span class="o">=</span><span class="s1">&#39;sphinx.ext.</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ext</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;extensions&#39;</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;enable </span><span class="si">%s</span><span class="s1"> extension&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="n">ext</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;Project templating&#39;</span><span class="p">))</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-t&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--templatedir&#39;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;TEMPLATEDIR&#39;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;templatedir&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;template directory for template files&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parser</span>
+
+
+<span class="k">class</span> <span class="nc">CliOptions</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Arguments parsed from the command line.&quot;&quot;&quot;</span>
+
+    <span class="n">module_path</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">exclude_pattern</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">destdir</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">quiet</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">maxdepth</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">followlinks</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">dryrun</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">separatemodules</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">includeprivate</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">tocfile</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">noheadings</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">modulefirst</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">implicit_namespaces</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">full</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">append_syspath</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">header</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">author</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">release</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">extensions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">templatedir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">remove_old</span><span class="p">:</span> <span class="nb">bool</span>
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../generate_apidoc.html#generate_apidoc.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse and check the command line arguments.&quot;&quot;&quot;</span>
+    <span class="n">locale</span><span class="o">.</span><span class="n">setlocale</span><span class="p">(</span><span class="n">locale</span><span class="o">.</span><span class="n">LC_ALL</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">sphinx</span><span class="o">.</span><span class="n">locale</span><span class="o">.</span><span class="n">init_console</span><span class="p">()</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">get_parser</span><span class="p">()</span>
+    <span class="n">args</span><span class="p">:</span> <span class="n">CliOptions</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="n">rootpath</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">module_path</span><span class="p">)</span>
+
+    <span class="c1"># normalize opts</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">header</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="n">rootpath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">suffix</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">suffix</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">rootpath</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">__</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> is not a directory.&#39;</span><span class="p">),</span> <span class="n">rootpath</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">dryrun</span><span class="p">:</span>
+        <span class="n">ensuredir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">destdir</span><span class="p">)</span>
+    <span class="n">excludes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">fnmatch</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">exclude</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">exclude</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">exclude_pattern</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">written_files</span><span class="p">,</span> <span class="n">modules</span> <span class="o">=</span> <span class="n">recurse_tree</span><span class="p">(</span><span class="n">rootpath</span><span class="p">,</span> <span class="n">excludes</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">templatedir</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">full</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">sphinx.cmd</span> <span class="kn">import</span> <span class="n">quickstart</span> <span class="k">as</span> <span class="n">qs</span>
+
+        <span class="n">modules</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">prev_module</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">modules</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prev_module</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">prev_module</span> <span class="o">=</span> <span class="n">module</span>
+            <span class="n">text</span> <span class="o">+=</span> <span class="s1">&#39;   </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">module</span>
+        <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">destdir</span><span class="p">,</span>
+            <span class="s1">&#39;sep&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;dot&#39;</span><span class="p">:</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;project&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
+            <span class="s1">&#39;author&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">author</span> <span class="ow">or</span> <span class="s1">&#39;Author&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">version</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;release&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">release</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">version</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;suffix&#39;</span><span class="p">:</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">suffix</span><span class="p">,</span>
+            <span class="s1">&#39;master&#39;</span><span class="p">:</span> <span class="s1">&#39;index&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;epub&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;extensions&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s1">&#39;sphinx.ext.autodoc&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sphinx.ext.viewcode&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sphinx.ext.todo&#39;</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="s1">&#39;makefile&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;batchfile&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;make_mode&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;mastertocmaxdepth&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">maxdepth</span><span class="p">,</span>
+            <span class="s1">&#39;mastertoctree&#39;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span>
+            <span class="s1">&#39;language&#39;</span><span class="p">:</span> <span class="s1">&#39;en&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;module_path&#39;</span><span class="p">:</span> <span class="n">rootpath</span><span class="p">,</span>
+            <span class="s1">&#39;append_syspath&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">append_syspath</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">extensions</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="s1">&#39;extensions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">extensions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">quiet</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="s1">&#39;quiet&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;extensions&#39;</span><span class="p">][:]:</span>
+            <span class="k">if</span> <span class="s1">&#39;,&#39;</span> <span class="ow">in</span> <span class="n">ext</span><span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">&#39;extensions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">&#39;extensions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ext</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">dryrun</span><span class="p">:</span>
+            <span class="n">qs</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
+                <span class="n">d</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">force</span><span class="p">,</span> <span class="n">templatedir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">templatedir</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">tocfile</span><span class="p">:</span>
+        <span class="n">written_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">create_modules_toc_file</span><span class="p">(</span><span class="n">modules</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">tocfile</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">templatedir</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">remove_old</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">dryrun</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">existing</span> <span class="ow">in</span> <span class="n">Path</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">destdir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;**/*.</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">existing</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">written_files</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">existing</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="n">__</span><span class="p">(</span><span class="s1">&#39;Failed to remove </span><span class="si">%s</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">),</span>
+                        <span class="n">existing</span><span class="p">,</span>
+                        <span class="n">exc</span><span class="o">.</span><span class="n">strerror</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;autodoc&#39;</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+
+<span class="c1"># So program can be started with &quot;python -m sphinx.apidoc ...&quot;</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Projet Application - Centrale Alumni</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">code</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Code du module</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Larissa ALBUQUERQUE, Clara MATTOS MEDEIROS.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

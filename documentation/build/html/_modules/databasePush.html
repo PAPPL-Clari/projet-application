@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+
+<html lang="fr" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>databasePush &#8212; Documentation Projet Application - Centrale Alumni 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=7a28dfa3"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=e6b791cb"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Recherche" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Code source de databasePush</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">config</span>
+<span class="kn">from</span> <span class="nn">unidecode</span> <span class="kn">import</span> <span class="n">unidecode</span>
+<span class="kn">import</span> <span class="nn">nest_asyncio</span>
+<span class="kn">from</span> <span class="nn">extractInfo.fetchData</span> <span class="kn">import</span> <span class="n">fetchData_async</span>
+<span class="kn">from</span> <span class="nn">extractInfo.getDiplomaInfo</span> <span class="kn">import</span> <span class="n">getDiplomaInfo</span>
+<span class="kn">from</span> <span class="nn">extractInfo.getUtilisateurInfo</span> <span class="kn">import</span> <span class="n">getUtilisateurInfo</span>
+<span class="kn">from</span> <span class="nn">extractInfo.getMailsInfo</span> <span class="kn">import</span> <span class="n">getMailsInfo</span>
+<span class="kn">from</span> <span class="nn">extractInfo.getAdressesInfo</span> <span class="kn">import</span> <span class="n">getAdressesInfo</span>
+<span class="kn">from</span> <span class="nn">extractInfo.getPersonneInfo</span> <span class="kn">import</span> <span class="n">getPersonneInfo</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">psycopg2</span>
+<span class="kn">from</span> <span class="nn">extractInfo.format</span> <span class="kn">import</span> <span class="n">format_str</span><span class="p">,</span> <span class="n">format_name</span><span class="p">,</span> <span class="n">format_adress</span><span class="p">,</span> <span class="n">format_code_postal</span>
+
+<div class="viewcode-block" id="init">
+<a class="viewcode-back" href="../databasePush.html#databasePush.init">[docs]</a>
+<span class="k">def</span> <span class="nf">init</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ouvre une nouvelle connexion avec la base de données locale.</span>
+
+<span class="sd">    :param : None</span>
+<span class="sd">    :return : connection : un objet de connexion à la base de données</span>
+<span class="sd">    :return : cursor : curseur de la connexion</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Établissement de la connexion à la base de données...&quot;</span><span class="p">)</span>
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">psycopg2</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">database</span><span class="p">,</span>
+                                <span class="n">user</span><span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">login</span><span class="p">,</span>
+                                <span class="n">password</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">password</span><span class="p">,</span>
+                                <span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5432</span><span class="p">)</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="c1"># Ouvrir un curseur pour effectuer des opérations sur la base de données</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Connexion à la base de données établi.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span></div>
+
+
+<span class="c1"># Ajoute des données à la table « specialisation »</span>
+<div class="viewcode-block" id="push_specialisation">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_specialisation">[docs]</a>
+<span class="k">def</span> <span class="nf">push_specialisation</span><span class="p">(</span><span class="n">infosDiploma</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère toutes les spécialisations dans la table « spécialisation ».</span>
+<span class="sd">    Vérifie la duplicité des données et ajoute si la spécialisation n&#39;existe pas.</span>
+
+<span class="sd">    :param infosDiplôme : Liste de toutes les informations relatives aux diplômes dans l&#39;API</span>
+<span class="sd">    :param connection : Objet de connexion à la base de données</span>
+<span class="sd">    :param cursor : Objet curseur de la connexion à la base de données</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout des specialisations à la base de données...&quot;</span><span class="p">)</span>
+    <span class="n">specialisations</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosDiploma</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span> <span class="ow">and</span> <span class="s1">&#39;diplomas&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+            <span class="n">DiplomaInfo</span> <span class="o">=</span> <span class="n">getDiplomaInfo</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+
+            <span class="c1"># Prepare le nom de la specialisation </span>
+            <span class="n">nom_specialisation</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;nom_specialisation&quot;</span><span class="p">]</span>
+            <span class="n">nom_specialisation</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">nom_specialisation</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">nom_specialisation</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span> <span class="ow">and</span> <span class="n">nom_specialisation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specialisations</span><span class="p">:</span>
+                <span class="c1"># Vérifier si la spécialisation existe déjà</span>
+                <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT id_specialisation FROM specialisation WHERE nom_specialisation = </span><span class="si">{</span><span class="n">nom_specialisation</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>  <span class="c1"># Insérer uniquement s&#39;il n&#39;existe pas</span>
+                    <span class="n">insert_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    INSERT INTO specialisation (nom_specialisation)</span>
+<span class="s2">                    VALUES (</span><span class="si">{</span><span class="n">nom_specialisation</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                    &quot;&quot;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert_sql</span><span class="p">)</span>
+                    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+                <span class="n">specialisations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nom_specialisation</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout des specialisations à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Ajoute des données à la table « type_utilisateur »</span>
+<div class="viewcode-block" id="push_type_utilisateur">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_type_utilisateur">[docs]</a>
+<span class="k">def</span> <span class="nf">push_type_utilisateur</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insérer tous les types d&#39;utilisateurs dans la table type_utilisateur.</span>
+<span class="sd">    Vérifie la duplicité des données et ajoute si le type n&#39;existe pas.</span>
+
+<span class="sd">    param infosUser : Liste de toutes les infos des utilisateurs dans l&#39;API</span>
+<span class="sd">    :param connection : Objet de connexion à la base de données</span>
+<span class="sd">    :param cursor : Objet curseur de la connexion à la base de données</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout des types d&#39;utilisateur à la base de données...&quot;</span><span class="p">)</span>
+    <span class="n">type_utilisateurs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosUser</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+        
+        <span class="c1"># Mettre l&#39;information sur le type d&#39;utilisateur dans la base de données</span>
+            <span class="k">if</span> <span class="s1">&#39;type&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+                <span class="n">nom_type_utilisateur</span> <span class="o">=</span> <span class="n">getUtilisateurInfo</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+                <span class="n">nom_type_utilisateur</span> <span class="o">=</span> <span class="n">nom_type_utilisateur</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+                <span class="n">nom_type_utilisateur</span> <span class="o">=</span> <span class="s2">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="n">nom_type_utilisateur</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span>
+
+                <span class="k">if</span> <span class="n">nom_type_utilisateur</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span> <span class="ow">and</span> <span class="n">nom_type_utilisateur</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">type_utilisateurs</span><span class="p">:</span>
+                    <span class="c1"># Vérifier si le type existe déjà</span>
+                    <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = </span><span class="si">{</span><span class="n">nom_type_utilisateur</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                    &quot;&quot;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>  <span class="c1"># Insérer uniquement s&#39;il n&#39;existe pas</span>
+                        
+                        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        INSERT INTO type_utilisateur (nom_type_utilisateur)</span>
+<span class="s2">                        VALUES (</span><span class="si">{</span><span class="n">nom_type_utilisateur</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">type_utilisateurs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nom_type_utilisateur</span><span class="p">)</span>
+                        
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+                        <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout des types d&#39;utilisateur à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Ajoute les données type_mail à la table « type »</span>
+<div class="viewcode-block" id="push_type_mail">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_type_mail">[docs]</a>
+<span class="k">def</span> <span class="nf">push_type_mail</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">,</span> <span class="n">types</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère tous les types d&#39;emails dans la table type.</span>
+<span class="sd">    Vérifie la duplicité des données et ajoute si le type n&#39;existe pas.</span>
+
+<span class="sd">    param infosUser : Liste de toutes les informations sur les utilisateurs dans l&#39;API</span>
+<span class="sd">    :param connection : Objet de connexion à la base de données</span>
+<span class="sd">    :param cursor : Objet curseur de la connexion à la base de données</span>
+<span class="sd">    :param types : tableau liste des types déjà existants dans la base de données</span>
+<span class="sd">    :return types : tableau liste des types sauvegardés dans la base de données</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout des types de mail à la base de données...&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosUser</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;emails&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+
+                <span class="n">nom_type</span> <span class="o">=</span> <span class="n">getMailsInfo</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">][</span><span class="s2">&quot;emails&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">nom</span> <span class="ow">in</span> <span class="n">nom_type</span><span class="p">:</span>
+                    <span class="n">nom</span> <span class="o">=</span> <span class="n">nom</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+                    <span class="n">nom</span> <span class="o">=</span> <span class="s2">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="n">nom</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span>
+
+                    <span class="k">if</span> <span class="n">nom</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span> <span class="ow">and</span> <span class="n">nom</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
+                        <span class="n">types</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nom</span><span class="p">)</span>
+                        <span class="c1"># Vérifier si le type existe déjà</span>
+                        <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        SELECT id_type FROM type WHERE nom_type = </span><span class="si">{</span><span class="n">nom</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>  <span class="c1"># Insérer uniquement s&#39;il n&#39;existe pas</span>
+                            <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            INSERT INTO type (nom_type)</span>
+<span class="s2">                            VALUES (</span><span class="si">{</span><span class="n">nom</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                            &quot;&quot;&quot;</span>
+                            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+                            <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout des types de mail à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">types</span></div>
+
+
+<span class="c1"># Ajouter les données type_adresse à la table « type »</span>
+<div class="viewcode-block" id="push_type_adress">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_type_adress">[docs]</a>
+<span class="k">def</span> <span class="nf">push_type_adress</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">,</span> <span class="n">types</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère tous les types d&#39;adresses dans la table type.</span>
+<span class="sd">    Vérifie la duplicité des données et ajoute si le type n&#39;existe pas.</span>
+
+<span class="sd">    param infosUser : Liste de toutes les informations sur les utilisateurs dans l&#39;API</span>
+<span class="sd">    :param connection : Objet de connexion à la base de données</span>
+<span class="sd">    :param cursor : Objet curseur de la connexion à la base de données</span>
+<span class="sd">    :param types : tableau liste des types déjà existants dans la base de données</span>
+<span class="sd">    :return types : tableau liste des types sauvegardés dans la base de données</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout des types d&#39;adresse à la base de données...&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosUser</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;address&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+
+                <span class="n">nom_type</span> <span class="o">=</span> <span class="n">getAdressesInfo</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">][</span><span class="s2">&quot;address&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">nom</span> <span class="ow">in</span> <span class="n">nom_type</span><span class="p">:</span>
+                    <span class="n">nom</span> <span class="o">=</span> <span class="n">nom</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+                    <span class="n">nom</span> <span class="o">=</span> <span class="s2">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="n">nom</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span>
+
+                    <span class="k">if</span> <span class="n">nom</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span> <span class="ow">and</span> <span class="n">nom</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
+                        <span class="n">types</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nom</span><span class="p">)</span>
+                        <span class="c1"># Vérifier si le type existe déjà</span>
+                        <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        SELECT id_type FROM type WHERE nom_type = </span><span class="si">{</span><span class="n">nom</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>  <span class="c1"># Insérer uniquement s&#39;il n&#39;existe pas</span>
+                            <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            INSERT INTO type (nom_type)</span>
+<span class="s2">                            VALUES (</span><span class="si">{</span><span class="n">nom</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                            &quot;&quot;&quot;</span>
+                            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+                            <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout des types d&#39;adresse à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">types</span></div>
+
+
+<span class="c1"># Ajouter les données mail au tableau mail</span>
+<div class="viewcode-block" id="push_mail">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_mail">[docs]</a>
+<span class="k">def</span> <span class="nf">push_mail</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">,</span> <span class="n">types</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère toutes les adresses électroniques dans la table mail.</span>
+<span class="sd">    Vérifie la duplicité des données et ajoute si le type n&#39;existe pas.</span>
+<span class="sd">    Met à jour les données existantes si nécessaire.</span>
+
+<span class="sd">    :param infosUser : Liste de toutes les infos des utilisateurs dans l&#39;API</span>
+<span class="sd">    :param connection : Objet de connexion à la base de données</span>
+<span class="sd">    :param cursor : Objet curseur de la connexion à la base de données</span>
+<span class="sd">    :param types : Liste des types existants dans la base de données</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout ou mise à jour des données de mail à la base de données...&quot;</span><span class="p">)</span>
+    <span class="n">mails</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Récupérer tous les types d&#39;id</span>
+    <span class="n">idTypes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="nb">type</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
+        <span class="n">sqlRecup</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SELECT id_type FROM type WHERE nom_type=</span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sqlRecup</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">idTypes</span><span class="p">[</span><span class="nb">type</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosUser</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span> <span class="ow">and</span> <span class="s1">&#39;emails&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+            <span class="n">infosMail</span> <span class="o">=</span> <span class="n">getMailsInfo</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">][</span><span class="s2">&quot;emails&quot;</span><span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">keyName</span> <span class="ow">in</span> <span class="n">infosMail</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">newMail</span> <span class="o">=</span> <span class="n">infosMail</span><span class="p">[</span><span class="n">keyName</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>  <span class="c1"># Escape single quotes</span>
+                <span class="n">newMail</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">newMail</span><span class="si">}</span><span class="s2">&#39;&quot;</span>  <span class="c1"># Entre guillemets</span>
+                <span class="n">infosMail</span><span class="p">[</span><span class="n">keyName</span><span class="p">]</span> <span class="o">=</span> <span class="n">newMail</span>
+                <span class="n">keyName</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">keyName</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
+                <span class="k">if</span> <span class="n">newMail</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span> <span class="ow">and</span> <span class="n">newMail</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mails</span><span class="p">:</span>
+                    <span class="c1"># Vérifier si le mail existe déjà</span>
+                    <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SELECT adresse_mail FROM mail WHERE adresse_mail = </span><span class="si">{</span><span class="n">newMail</span><span class="si">}</span><span class="s2">;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                    <span class="n">exists</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                    <span class="k">if</span> <span class="n">exists</span><span class="p">:</span>
+                        <span class="c1"># Met à jour l&#39;id_type si l&#39;email existe déjà</span>
+                        <span class="n">update_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        UPDATE mail</span>
+<span class="s2">                        SET id_type = </span><span class="si">{</span><span class="n">idTypes</span><span class="p">[</span><span class="n">keyName</span><span class="p">]</span><span class="si">}</span>
+<span class="s2">                        WHERE adresse_mail = </span><span class="si">{</span><span class="n">newMail</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">update_sql</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Insérer le nouvel e-mail</span>
+                        <span class="n">insert_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        INSERT INTO mail (adresse_mail, id_type)</span>
+<span class="s2">                        VALUES (</span><span class="si">{</span><span class="n">newMail</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">idTypes</span><span class="p">[</span><span class="n">keyName</span><span class="p">]</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert_sql</span><span class="p">)</span>
+
+                    <span class="n">mails</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newMail</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout ou mise à jour des mails à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+
+<span class="c1"># Ajouter les données de la ville au tableau ville</span>
+<div class="viewcode-block" id="push_ville">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_ville">[docs]</a>
+<span class="k">def</span> <span class="nf">push_ville</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère toutes les villes présentes dans l&#39;API dans la table ville.</span>
+<span class="sd">    Vérifie la duplicité des données et ajoute si la ville n&#39;existe pas.</span>
+
+<span class="sd">    param infosUser : Liste de toutes les informations sur les utilisateurs de l&#39;API</span>
+<span class="sd">    :param connection : Objet de connexion à la base de données</span>
+<span class="sd">    :param cursor : Objet curseur de la connexion à la base de données</span>
+<span class="sd">    :return villes : Liste des villes présentes dans la base de données</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout des villes à la base de données...&quot;</span><span class="p">)</span>
+    <span class="n">villes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosUser</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;address&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+                <span class="n">adresses</span> <span class="o">=</span> <span class="n">getAdressesInfo</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">][</span><span class="s2">&quot;address&quot;</span><span class="p">])</span>
+
+                <span class="k">for</span> <span class="n">adresse</span> <span class="ow">in</span> <span class="n">adresses</span><span class="p">:</span>
+                    <span class="n">ville</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;ville&quot;</span><span class="p">]</span>
+                    <span class="n">nom_pays</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;nomPays&quot;</span><span class="p">]</span>
+
+                    <span class="n">ville</span> <span class="o">=</span> <span class="n">format_name</span><span class="p">(</span><span class="n">ville</span><span class="p">)</span>
+                    <span class="n">nom_pays</span> <span class="o">=</span> <span class="s2">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="n">nom_pays</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span>
+
+                    <span class="k">if</span> <span class="n">ville</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span> <span class="ow">and</span> <span class="n">ville</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">villes</span><span class="p">:</span>
+                        <span class="n">villes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ville</span><span class="p">)</span>
+                        
+                        <span class="c1"># Vérifier si la ville existe déjà</span>
+                        <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        SELECT id_ville FROM ville WHERE nom_ville = </span><span class="si">{</span><span class="n">ville</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                        <span class="c1"># Vérifier si le pays existe</span>
+                        <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        SELECT acronyme_pays FROM pays WHERE nom_pays = </span><span class="si">{</span><span class="n">nom_pays</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                        <span class="n">result_pays</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">result_pays</span><span class="p">:</span>  <span class="c1"># Insérer uniquement si la ville n&#39;existe pas et que le pays existe.</span>
+                            <span class="n">pays</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">result_pays</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+  
+                            <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            INSERT INTO ville (nom_ville, acronyme_pays)</span>
+<span class="s2">                            VALUES (</span><span class="si">{</span><span class="n">ville</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">pays</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                            &quot;&quot;&quot;</span>
+                            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+                            <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout des villes à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">villes</span></div>
+
+
+<span class="c1"># Ajouter des adresses dans la table adresse</span>
+<div class="viewcode-block" id="push_adresse">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_adresse">[docs]</a>
+<span class="k">def</span> <span class="nf">push_adresse</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère toutes les adresses dans la table &#39;adresse&#39;.</span>
+<span class="sd">    Vérifie les doublons de données et ajoute l&#39;adresse principale (adresse 1) si elle n&#39;existe pas.</span>
+<span class="sd">    Met à jour les données existantes si nécessaire.</span>
+
+<span class="sd">    :param infosUser: Liste contenant toutes les informations des utilisateurs provenant de l&#39;API.</span>
+<span class="sd">    :param connection: Objet de connexion à la base de données.</span>
+<span class="sd">    :param cursor: Objet curseur pour exécuter les requêtes SQL.</span>
+<span class="sd">    :return list_adresses: Tableau contenant toutes les adresses sauvegardées dans la base de données (adresse 1 à 4).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout ou mise à jour des adresses à la base de données...&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosUser</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;address&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+
+                <span class="c1"># Récupération des informations d&#39;adresse</span>
+                <span class="n">adresses</span> <span class="o">=</span> <span class="n">getAdressesInfo</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">][</span><span class="s2">&quot;address&quot;</span><span class="p">])</span>
+
+                <span class="k">for</span> <span class="n">adresse</span> <span class="ow">in</span> <span class="n">adresses</span><span class="p">:</span>
+                    
+                    <span class="n">adresse1</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;adresse_1&quot;</span><span class="p">]</span>
+                    <span class="n">adresse2</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;adresse_2&quot;</span><span class="p">]</span>
+                    <span class="n">adresse3</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;adresse_3&quot;</span><span class="p">]</span>
+                    <span class="n">adresse4</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;adresse_4&quot;</span><span class="p">]</span>
+                    <span class="n">code_postal</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;code_postal&quot;</span><span class="p">]</span>
+                    <span class="n">npai</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;npai&quot;</span><span class="p">]</span>
+                    <span class="n">nom_ville</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;ville&quot;</span><span class="p">]</span>
+                    <span class="n">nom_pays</span> <span class="o">=</span> <span class="n">adresses</span><span class="p">[</span><span class="n">adresse</span><span class="p">][</span><span class="s2">&quot;nomPays&quot;</span><span class="p">]</span>
+                    
+                    <span class="c1"># Formatage des données</span>
+                    <span class="nb">type</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">adresse</span><span class="p">)</span>
+                    <span class="n">adresse1</span> <span class="o">=</span> <span class="n">format_adress</span><span class="p">(</span><span class="n">adresse1</span><span class="p">)</span>
+                    <span class="n">adresse2</span> <span class="o">=</span> <span class="n">format_adress</span><span class="p">(</span><span class="n">adresse2</span><span class="p">)</span>
+                    <span class="n">adresse3</span> <span class="o">=</span> <span class="n">format_adress</span><span class="p">(</span><span class="n">adresse3</span><span class="p">)</span>
+                    <span class="n">adresse4</span> <span class="o">=</span> <span class="n">format_adress</span><span class="p">(</span><span class="n">adresse4</span><span class="p">)</span>
+                    <span class="n">nom_ville</span> <span class="o">=</span> <span class="n">format_name</span><span class="p">(</span><span class="n">nom_ville</span><span class="p">)</span>
+                    <span class="n">code_postal</span> <span class="o">=</span> <span class="n">format_code_postal</span><span class="p">(</span><span class="n">code_postal</span><span class="p">)</span>
+
+                    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+
+                    <span class="n">nom_pays</span> <span class="o">=</span> <span class="s2">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="n">nom_pays</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span>
+
+                    <span class="k">if</span> <span class="n">adresse1</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">:</span>
+                        <span class="c1"># Vérifier si l&#39;adresse principale existe déjà</span>
+                        <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        SELECT adresse_id FROM adresse WHERE id_personne = </span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                        <span class="n">result_adress1</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+                        
+                        <span class="c1"># Vérifier si la ville existe déjà</span>
+                        <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        SELECT id_ville FROM ville WHERE nom_ville = </span><span class="si">{</span><span class="n">nom_ville</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                        <span class="n">result_city</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                        <span class="c1"># Vérifier si le type d&#39;adresse existe déjà</span>
+                        <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        SELECT id_type FROM type WHERE nom_type = </span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                        <span class="n">result_type</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+                    
+                        <span class="k">if</span> <span class="n">result_city</span> <span class="ow">and</span> <span class="n">result_type</span><span class="p">:</span>
+                            <span class="n">result_city</span> <span class="o">=</span> <span class="n">result_city</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">result_type</span> <span class="o">=</span> <span class="n">result_type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">type_adresse</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">adresse</span><span class="p">)</span>
+
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">result_adress1</span> <span class="ow">and</span> <span class="n">code_postal</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                                <span class="c1"># Insérer une nouvelle adresse si elle n&#39;existe pas</span>
+                                <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                                INSERT INTO adresse (adresse_1, adresse_2, adresse_3, adresse_4, id_ville, npai, code_postal, type_adresse, id_type, id_personne)</span>
+<span class="s2">                                VALUES (</span><span class="si">{</span><span class="n">adresse1</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">adresse2</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">adresse3</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">adresse4</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">result_city</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">npai</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">code_postal</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_adresse</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">result_type</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                                &quot;&quot;&quot;</span>
+                                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="c1"># Mettre à jour l&#39;adresse existante si elle existe déjà</span>
+                                <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                                UPDATE adresse</span>
+<span class="s2">                                SET adresse_1 = </span><span class="si">{</span><span class="n">adresse1</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                    adresse_2 = </span><span class="si">{</span><span class="n">adresse2</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                    adresse_3 = </span><span class="si">{</span><span class="n">adresse3</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                    adresse_4 = </span><span class="si">{</span><span class="n">adresse4</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                    id_ville = </span><span class="si">{</span><span class="n">result_city</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                    npai = </span><span class="si">{</span><span class="n">npai</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                    code_postal = </span><span class="si">{</span><span class="n">code_postal</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                    type_adresse = </span><span class="si">{</span><span class="n">type_adresse</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                    id_type = </span><span class="si">{</span><span class="n">result_type</span><span class="si">}</span>
+<span class="s2">                                WHERE id_personne = </span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                                &quot;&quot;&quot;</span>
+                                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+
+                            <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout ou mise à jour des adresses à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Ajouter les données des écoles dans la table ecole</span>
+<div class="viewcode-block" id="push_ecoles">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_ecoles">[docs]</a>
+<span class="k">def</span> <span class="nf">push_ecoles</span><span class="p">(</span><span class="n">infosDiploma</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère toutes les écoles dans la table &#39;ecole&#39;.</span>
+<span class="sd">    Vérifie les doublons de données et ajoute si l&#39;école n&#39;existe pas.</span>
+
+<span class="sd">    :param infosDiploma: Liste contenant toutes les informations des diplômes depuis l&#39;API.</span>
+<span class="sd">    :param connection: Objet de connexion à la base de données.</span>
+<span class="sd">    :param cursor: Objet curseur pour exécuter les requêtes SQL.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout des écoles à la base de données...&quot;</span><span class="p">)</span>
+    <span class="n">ecoles</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosDiploma</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span> <span class="ow">and</span> <span class="s1">&#39;diplomas&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+            <span class="n">DiplomaInfo</span> <span class="o">=</span> <span class="n">getDiplomaInfo</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+
+            <span class="c1"># Préparer le nom de l&#39;école et l&#39;acronyme du pays</span>
+            <span class="n">nom_ecole</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;nom_ecole&quot;</span><span class="p">]</span>
+            <span class="n">acronyme_pays</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;acronyme_pays_ecole&quot;</span><span class="p">]</span>
+
+            <span class="n">nom_ecole</span> <span class="o">=</span> <span class="n">format_name</span><span class="p">(</span><span class="n">nom_ecole</span><span class="p">)</span>
+            <span class="n">acronyme_pays</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">acronyme_pays</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">nom_ecole</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span> <span class="ow">and</span> <span class="n">nom_ecole</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ecoles</span><span class="p">:</span>
+                <span class="c1"># Vérifier si l&#39;école existe déjà</span>
+                <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT id_ecole FROM ecole WHERE nom_ecole = </span><span class="si">{</span><span class="n">nom_ecole</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                <span class="c1"># Vérifier si le pays existe déjà</span>
+                <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT nom_pays FROM pays WHERE acronyme_pays = </span><span class="si">{</span><span class="n">acronyme_pays</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                <span class="n">result_pays</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">result_pays</span><span class="p">:</span>  <span class="c1"># Insérer uniquement si elle n&#39;existe pas</span>
+                    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            INSERT INTO ecole (nom_ecole, acronyme_pays)</span>
+<span class="s2">                            VALUES (</span><span class="si">{</span><span class="n">nom_ecole</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">acronyme_pays</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                            &quot;&quot;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+                    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+                    <span class="n">ecoles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nom_ecole</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès de l&#39;ajout des écoles à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Ajouter les données des personnes dans la table personne</span>
+<div class="viewcode-block" id="push_personne">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_personne">[docs]</a>
+<span class="k">def</span> <span class="nf">push_personne</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère ou met à jour les personnes dans la table &#39;personne&#39;.</span>
+<span class="sd">    Vérifie les doublons de données, ajoute les nouvelles personnes,</span>
+<span class="sd">    et met à jour les données existantes si nécessaire.</span>
+
+<span class="sd">    :param infosUser: Liste contenant toutes les informations des utilisateurs depuis l&#39;API.</span>
+<span class="sd">    :param connection: Objet de connexion à la base de données.</span>
+<span class="sd">    :param cursor: Objet curseur pour exécuter les requêtes SQL.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout ou mise à jour des personnes dans la base de données...&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosUser</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span> <span class="ow">and</span> <span class="s1">&#39;civil&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="s1">&#39;type&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="s1">&#39;address&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+            <span class="n">personneInfo</span> <span class="o">=</span> <span class="n">getPersonneInfo</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+            
+            <span class="n">user_id</span> <span class="o">=</span> <span class="n">personneInfo</span><span class="p">[</span><span class="s2">&quot;id_personne&quot;</span><span class="p">]</span>
+
+            <span class="c1"># Vérifier si la personne existe déjà</span>
+            <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT id_personne FROM personne WHERE id_personne = </span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+            <span class="n">personne</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+            <span class="c1"># Vérifier si le pays existe déjà</span>
+            <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT acronyme_pays FROM pays WHERE UPPER(nom_pays) = UPPER(</span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s2">&quot;nationalite&quot;</span><span class="p">]</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+            <span class="n">result_pays</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">result_pays</span><span class="p">:</span>
+                <span class="n">result_pays</span> <span class="o">=</span> <span class="n">result_pays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">result_pays</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">result_pays</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result_pays</span> <span class="o">=</span> <span class="s1">&#39;NULL&#39;</span>
+
+            <span class="c1"># Vérifier si la ville existe déjà</span>
+            <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT id_ville FROM ville WHERE nom_ville = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s2">&quot;ville&quot;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+            <span class="n">result_ville</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">result_ville</span><span class="p">:</span>
+                <span class="n">result_ville</span> <span class="o">=</span> <span class="n">result_ville</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result_ville</span> <span class="o">=</span> <span class="s1">&#39;NULL&#39;</span>
+
+            <span class="c1"># Vérifier l&#39;id_type_utilisateur</span>
+            <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT id_type_utilisateur FROM type_utilisateur WHERE nom_type_utilisateur = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s2">&quot;nom_type_utilisateur&quot;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+            <span class="n">result_type</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+            <span class="n">result_type</span> <span class="o">=</span> <span class="n">result_type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">personne</span><span class="p">:</span>  <span class="c1"># Insérer uniquement si la personne n&#39;existe pas</span>
+                <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        INSERT INTO personne (id_personne, prenom, nom, nom_usage, date_naissance, ref_school, civilite, id_ville, adresse_mail, id_type_utilisateur, acronyme_pays, derniere_mise_a_jour)</span>
+<span class="s2">                        VALUES (</span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;id_personne&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;prenom&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;nom&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;nomUsage&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;dateNaissance&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;school_ref&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                                </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;civilite&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">result_ville</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;mail&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">result_type</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">result_pays</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;miseAJour&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># Mettre à jour les données si la personne existe</span>
+                <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                        UPDATE personne</span>
+<span class="s2">                        SET prenom = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;prenom&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            nom = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;nom&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            nom_usage = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;nomUsage&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            date_naissance = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;dateNaissance&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            ref_school = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;school_ref&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            civilite = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;civilite&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            id_ville = </span><span class="si">{</span><span class="n">result_ville</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            adresse_mail = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;mail&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            id_type_utilisateur = </span><span class="si">{</span><span class="n">result_type</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            acronyme_pays = </span><span class="si">{</span><span class="n">result_pays</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                            derniere_mise_a_jour = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;miseAJour&#39;</span><span class="p">]</span><span class="si">}</span>
+<span class="s2">                        WHERE id_personne = </span><span class="si">{</span><span class="n">personneInfo</span><span class="p">[</span><span class="s1">&#39;id_personne&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+            
+            <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès de l&#39;ajout ou mise à jour des personnes dans la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Ajouter les données des diplômes à la table diplome</span>
+<div class="viewcode-block" id="push_diplome">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_diplome">[docs]</a>
+<span class="k">def</span> <span class="nf">push_diplome</span><span class="p">(</span><span class="n">infosDiploma</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Insère tous les diplômes dans la table diplome.</span>
+<span class="sd">    Vérifie la duplication des données et ajoute si le diplôme n&#39;existe pas.</span>
+
+<span class="sd">    :param infosDiploma: Liste de toutes les informations sur les diplômes de l&#39;API</span>
+<span class="sd">    :param connection: Objet de connexion à la base de données</span>
+<span class="sd">    :param cursor: Objet curseur de la connexion à la base de données</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout des diplômes à la base de données...&quot;</span><span class="p">)</span>
+    <span class="n">diplomes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosDiploma</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span> <span class="ow">and</span> <span class="s1">&#39;diplomas&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+            <span class="n">DiplomaInfo</span> <span class="o">=</span> <span class="n">getDiplomaInfo</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">DiplomaInfo</span><span class="p">)):</span>
+                <span class="c1"># Préparation des noms d&#39;école et acronymes de pays</span>
+                <span class="n">ref_diploma</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;ref_diplome&quot;</span><span class="p">]</span>
+                <span class="n">nom_specialisation</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;nom_specialisation&quot;</span><span class="p">]</span>
+                <span class="n">nom_ecole</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;nom_ecole&quot;</span><span class="p">]</span>
+                <span class="n">nom_diplome</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;nom_diplome&quot;</span><span class="p">]</span> 
+                <span class="n">parcours</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;parcours&quot;</span><span class="p">]</span>
+
+                <span class="n">ref_diploma</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">ref_diploma</span><span class="p">)</span>
+                <span class="n">nom_ecole</span> <span class="o">=</span> <span class="n">format_name</span><span class="p">(</span><span class="n">nom_ecole</span><span class="p">)</span>
+                <span class="n">nom_diplome</span> <span class="o">=</span> <span class="n">format_name</span><span class="p">(</span><span class="n">nom_diplome</span><span class="p">)</span>
+                <span class="n">parcours</span> <span class="o">=</span> <span class="n">format_name</span><span class="p">(</span><span class="n">parcours</span><span class="p">)</span>
+                <span class="n">nom_specialisation</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">nom_specialisation</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">nom_diplome</span> <span class="o">!=</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">:</span>
+                    <span class="c1"># Vérifie si le diplôme existe déjà</span>
+                    <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    SELECT id_diplome FROM diplome WHERE nom_diplome = </span><span class="si">{</span><span class="n">nom_diplome</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                    &quot;&quot;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                    <span class="c1"># Recherche l&#39;ID pour la spécialisation</span>
+                    <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    SELECT id_specialisation FROM specialisation WHERE nom_specialisation = </span><span class="si">{</span><span class="n">nom_specialisation</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                    &quot;&quot;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                    <span class="n">result_spec</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                    <span class="k">if</span> <span class="n">result_spec</span><span class="p">:</span>
+                        <span class="n">id_specialisation</span> <span class="o">=</span> <span class="n">result_spec</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">id_specialisation</span> <span class="o">=</span> <span class="s1">&#39;NULL&#39;</span>
+
+                    <span class="c1"># Recherche l&#39;ID pour l&#39;école</span>
+                    <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    SELECT id_ecole FROM ecole WHERE nom_ecole = </span><span class="si">{</span><span class="n">nom_ecole</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                    &quot;&quot;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                    <span class="n">result_ecole</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">result_ecole</span><span class="p">:</span>  <span class="c1"># Insère uniquement s&#39;il n&#39;existe pas</span>
+                        <span class="n">id_ecole</span> <span class="o">=</span> <span class="n">result_ecole</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                                INSERT INTO diplome (ref_diploma, id_specialisation, id_ecole, </span>
+<span class="s2">                                                    nom_diplome, parcours)</span>
+<span class="s2">                                VALUES (</span><span class="si">{</span><span class="n">ref_diploma</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">id_specialisation</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">id_ecole</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">nom_diplome</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">parcours</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                                &quot;&quot;&quot;</span>
+                        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+                        <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+                        <span class="n">diplomes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nom_diplome</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout des diplômes à la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Ajouter ou mettre à jour des liens entre diplômes et personnes via a_un_diplome</span>
+<div class="viewcode-block" id="push_a_un_diplome">
+<a class="viewcode-back" href="../databasePush.html#databasePush.push_a_un_diplome">[docs]</a>
+<span class="k">def</span> <span class="nf">push_a_un_diplome</span><span class="p">(</span><span class="n">infosDiploma</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Relie la table diplome à la table personne via la table a_un_diplome.</span>
+<span class="sd">    Vérifie la duplication des données, ajoute les nouveaux liens,</span>
+<span class="sd">    et met à jour les données existantes si nécessaire.</span>
+
+<span class="sd">    :param infosDiploma: Liste de toutes les informations sur les diplômes de l&#39;API</span>
+<span class="sd">    :param connection: Objet de connexion à la base de données</span>
+<span class="sd">    :param cursor: Objet curseur de la connexion à la base de données</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ajout ou mise à jour des liens diplômes/personnes à la base de données...&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infosDiploma</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="s1">&#39;_embedded&#39;</span> <span class="ow">in</span> <span class="n">info</span> <span class="ow">and</span> <span class="s1">&#39;diplomas&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;_embedded&quot;</span><span class="p">]:</span>
+            <span class="n">DiplomaInfo</span> <span class="o">=</span> <span class="n">getDiplomaInfo</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+            <span class="n">id_personne</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">DiplomaInfo</span><span class="p">)):</span>
+                <span class="c1"># Préparation des données du lien</span>
+                <span class="n">est_diplome</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;estDiplome&quot;</span><span class="p">]</span>
+                <span class="n">nom_diplome</span> <span class="o">=</span> <span class="n">format_name</span><span class="p">(</span><span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;nom_diplome&quot;</span><span class="p">])</span>
+
+                <span class="n">dateDiplomation</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;dateDiplomation&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">dateDiplomation</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">dateDiplomation</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">dateDiplomation</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">dateDiplomation</span> <span class="o">=</span> <span class="s1">&#39;NULL&#39;</span>
+                
+                <span class="n">dateIntegration</span> <span class="o">=</span> <span class="n">DiplomaInfo</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s2">&quot;dateIntegration&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">dateIntegration</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">dateIntegration</span> <span class="o">=</span> <span class="n">format_str</span><span class="p">(</span><span class="n">dateIntegration</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">dateIntegration</span> <span class="o">=</span> <span class="s1">&#39;NULL&#39;</span>
+
+                <span class="c1"># Vérifie si le diplôme existe</span>
+                <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT id_diplome FROM diplome WHERE nom_diplome = </span><span class="si">{</span><span class="n">nom_diplome</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                <span class="n">result_diplome</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                <span class="c1"># Vérifie si la personne existe</span>
+                <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT id_personne FROM personne WHERE id_personne = </span><span class="si">{</span><span class="n">id_personne</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                <span class="n">result_personne</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">result_diplome</span> <span class="ow">and</span> <span class="n">result_personne</span><span class="p">:</span>  <span class="c1"># Vérifie que les données sont valides</span>
+                    <span class="n">id_diplome</span> <span class="o">=</span> <span class="n">result_diplome</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    
+                    <span class="c1"># Vérifie si le lien existe déjà</span>
+                    <span class="n">check_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    SELECT id_diplome FROM a_un_diplome WHERE id_diplome = </span><span class="si">{</span><span class="n">id_diplome</span><span class="si">}</span><span class="s2"> AND id_personne = </span><span class="si">{</span><span class="n">id_personne</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                    &quot;&quot;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">check_sql</span><span class="p">)</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>  <span class="c1"># Insère un nouveau lien si inexistant                   </span>
+                        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                                INSERT INTO a_un_diplome (id_diplome, id_personne, date_diplomation, date_integration, est_diplome)</span>
+<span class="s2">                                VALUES (</span><span class="si">{</span><span class="n">id_diplome</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">id_personne</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dateDiplomation</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dateIntegration</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">est_diplome</span><span class="si">}</span><span class="s2">);</span>
+<span class="s2">                                &quot;&quot;&quot;</span>
+                    <span class="k">else</span><span class="p">:</span>  <span class="c1"># Met à jour le lien existant</span>
+                        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                                UPDATE a_un_diplome</span>
+<span class="s2">                                SET date_diplomation = </span><span class="si">{</span><span class="n">dateDiplomation</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                                    date_integration = </span><span class="si">{</span><span class="n">dateIntegration</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                                    est_diplome = </span><span class="si">{</span><span class="n">est_diplome</span><span class="si">}</span>
+<span class="s2">                                WHERE id_diplome = </span><span class="si">{</span><span class="n">id_diplome</span><span class="si">}</span><span class="s2"> AND id_personne = </span><span class="si">{</span><span class="n">id_personne</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">                                &quot;&quot;&quot;</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+                    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Succès à l&#39;ajout ou mise à jour des liens diplômes/personnes dans la base de données.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Charger les données depuis l&#39;API</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Chargement des données depuis l&#39;API...&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;(Cette opération peut prendre quelques minutes)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Active les appels asynchrones aux requêtes API</span>
+<span class="n">nest_asyncio</span><span class="o">.</span><span class="n">apply</span><span class="p">()</span>
+
+<span class="c1"># Démarre le chronomètre</span>
+<span class="n">start_time_api</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+<span class="c1"># Charge les données nécessaires depuis l&#39;API</span>
+<span class="n">infosDiploma</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fetchData_async</span><span class="p">(</span><span class="s2">&quot;diploma&quot;</span><span class="p">))</span>
+<span class="n">infosUser</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fetchData_async</span><span class="p">(</span><span class="s2">&quot;profile&quot;</span><span class="p">))</span>
+
+<span class="c1"># Informe la durée totale de récupération des données</span>
+<span class="n">end_time_api</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Durée de récupération des données de l&#39;API : </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">end_time_api</span> <span class="o">-</span> <span class="n">start_time_api</span><span class="p">))</span>
+
+<span class="c1"># Insérer les données dans la base de données</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">------------------------------------------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Insertion des données dans la base de données...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Établit la connexion avec la base de données</span>
+<span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">init</span><span class="p">()</span>
+
+<span class="c1"># Démarre le chronomètre</span>
+<span class="n">start_time_database</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+<span class="c1"># Remplit les tables de type</span>
+<span class="n">push_type_utilisateur</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+<span class="n">types</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">types</span> <span class="o">=</span> <span class="n">push_type_mail</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">,</span> <span class="n">types</span><span class="p">)</span>
+<span class="n">types</span> <span class="o">=</span> <span class="n">push_type_adress</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">,</span> <span class="n">types</span><span class="p">)</span>
+
+<span class="c1"># Remplit les tables specialisation et mail</span>
+<span class="n">push_specialisation</span><span class="p">(</span><span class="n">infosDiploma</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+<span class="n">push_mail</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">,</span> <span class="n">types</span><span class="p">)</span>
+
+<span class="c1"># Remplit les tables ville, personne, adresse, ecole, diplome et a_un_diplome</span>
+<span class="n">push_ville</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+<span class="n">push_personne</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+<span class="n">push_adresse</span><span class="p">(</span><span class="n">infosUser</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+<span class="n">push_ecoles</span><span class="p">(</span><span class="n">infosDiploma</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+<span class="n">push_diplome</span><span class="p">(</span><span class="n">infosDiploma</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+<span class="n">push_a_un_diplome</span><span class="p">(</span><span class="n">infosDiploma</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+
+<span class="c1"># Termine la connexion avec la base de données</span>
+<span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1"># Mesure le temps nécessaire pour insérer les données dans la base de données</span>
+<span class="n">end_time_database</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">------------------------------------------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Durée de la mise à jour de la base de données : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">end_time_database</span> <span class="o">-</span> <span class="n">start_time_database</span><span class="p">))</span>
+
+<span class="c1"># Mesure le temps total nécéssaire</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Durée totale du script : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">end_time_database</span> <span class="o">-</span> <span class="n">start_time_api</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Projet Application - Centrale Alumni</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">code</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Code du module</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Larissa ALBUQUERQUE, Clara MATTOS MEDEIROS.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

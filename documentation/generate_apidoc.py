@@ -1,34 +1,23 @@
 import os
 from sphinx.ext.apidoc import main
-import subprocess
-import sys
 
-# Diretórios
-source_dir = os.path.abspath('documentation/source')  # Ajuste ao caminho correto
-project_dir = os.path.abspath(".")  # Diretório principal do projeto
-output_dir = os.path.join(source_dir, "modules")
+def generate_apidoc():
+    # Caminho para o diretório com os módulos Python
+    modules_path = os.path.abspath("../projet-application/code")  # Ajuste o caminho conforme necessário
+    # Caminho para o diretório onde serão gerados os arquivos .rst
+    output_path = os.path.abspath("source")
+    
+    # Argumentos para o sphinx-apidoc
+    args = [
+        "--force",            # Sobrescreve arquivos existentes
+        "--output-dir", output_path,  # Diretório de saída
+        modules_path          # Diretório com os módulos Python
+    ]
+    
+    # Executa o apidoc
+    print("Gerando arquivos .rst...")
+    main(args)
+    print("Arquivos .rst gerados com sucesso!")
 
-# Garantir que o diretório de saída exista
-os.makedirs(output_dir, exist_ok=True)
-
-# Comando para gerar os arquivos rst
-command = [
-    sys.executable, "-m", "sphinx.ext.apidoc",
-    "-o", output_dir,  # Diretório de saída
-    project_dir,       # Diretório do código
-    "--force",         # Sobrescreve arquivos existentes
-    "--separate"       # Cria arquivos separados por módulo
-]
-
-# Executar o comando
-try:  
-    # Gerar documentação .rst apenas para o seu código
-    main(["-o", output_dir, source_dir, "--force", "--no-toc", "--separate"])
-    subprocess.run(command, check=True)
-    print(f"Arquivos .rst gerados com sucesso em {output_dir}")
-except Exception as e:
-    print(f"Erro ao gerar os arquivos .rst: {e}")
-
-
-
-
+if __name__ == "__main__":
+    generate_apidoc()
